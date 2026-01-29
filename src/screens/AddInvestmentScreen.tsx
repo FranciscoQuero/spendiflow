@@ -1,0 +1,248 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  Pressable,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { AmountInput } from '../components/AmountInput';
+import { useStore } from '../store/useStore';
+import { colors } from '../theme/colors';
+import { parseNumber, getDateISO } from '../utils/formatters';
+import { t } from '../locales/i18n';
+
+const investmentTypes = [
+  { id: 'stocks', name: 'Stocks', nameEn: 'Stocks' },
+  { id: 'crypto', name: 'Crypto', nameEn: 'Crypto' },
+  { id: 'fund', name: 'Investment Fund', nameEn: 'Investment Fund' },
+  { id: 'etf', name: 'ETF', nameEn: 'ETF' },
+  { id: 'pension', name: 'Pension', nameEn: 'Pension' },
+  { id: 'other', name: 'Other', nameEn: 'Other' },
+];
+
+export const AddInvestmentScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const addInvestment = useStore((state) => state.addInvestment);
+  const addContribution = useStore((state) => state.addContribution);
+  const settings = useStore((state) => state.settings);
+
+  const [name, setName] = useState('');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [initialContribution, setInitialContribution] = useState('');
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      Alert.alert(t('common.error'), 'Please enter an investment name');
+      return;
+    }
+
+    if (!selectedType) {
+      Alert.alert(t('common.error'), 'Please select a type');
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    addInvestment({
+      name: name.trim(),
+      type: selectedType,
+    });
+
+    // Add initial contribution if provided
+    const investments = useStore.getState().investments;
+    const newInvestment = investments[investments.length - 1];
+
+    if (newInvestment && parseNumber(initialContribution) > 0) {
+      addContribution(newInvestment.id, {
+        amount: parseNumber(initialContribution),
+        date: getDateISO(),
+        note: 'Initial contribution',
+      });
+    }
+
+    navigation.goBack();
+  };
+
+  const canSave = name.trim() && selectedType;
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
+          <Ionicons name="close" size={28} color={colors.text} />
+        </Pressable>
+        <Text style={styles.title}>{t('accounts.addInvestment')}</Text>
+        <View style={styles.closeButton} />
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Investment Name */}
+        <Text style={styles.label}>Investment Name</Text>
+        <TextInput
+          style={styles.textInput}
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g., S&P 500 Index Fund"
+          placeholderTextColor={colors.textSecondary}
+          autoFocus
+        />
+
+        {/* Type Selection */}
+        <Text style={styles.label}>Type</Text>
+        <View style={styles.typeContainer}>
+          {investmentTypes.map((type) => (
+            <Pressable
+              key={type.id}
+              style={[
+                styles.typeChip,
+                selectedType === type.id && styles.typeChipSelected,
+              ]}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setSelectedType(type.id);
+              }}
+            >
+              <Text
+                style={[
+                  styles.typeText,
+                  selectedType === type.id && styles.typeTextSelected,
+                ]}
+              >
+                {settings.language === 'es' ? type.name : type.nameEn}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Initial Contribution */}
+        <Text style={styles.label}>Initial Contribution (optional)</Text>
+        <AmountInput
+          value={initialContribution}
+          onChangeText={setInitialContribution}
+          type="income"
+        />
+      </ScrollView>
+
+      {/* Save Button */}
+      <View style={styles.footer}>
+        <Pressable
+          style={[styles.saveButton, !canSave && styles.disabledButton]}
+          onPress={handleSave}
+          disabled={!canSave}
+        >
+          <Text style={styles.saveButtonText}>{t('common.save')}</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 8,
+    marginTop: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  textInput: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  typeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  typeChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  typeChipSelected: {
+    backgroundColor: colors.income,
+    borderColor: colors.income,
+  },
+  typeText: {
+    fontSize: 14,
+    color: colors.text,
+  },
+  typeTextSelected: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: 34,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  saveButton: {
+    backgroundColor: colors.income,
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+});
