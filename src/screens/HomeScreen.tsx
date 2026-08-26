@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -12,22 +13,47 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '../components/Card';
 import { TransactionItem } from '../components/TransactionItem';
 import { QuickActionButton } from '../components/QuickActionButton';
+import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useTransactions } from '../hooks/useTransactions';
+import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { formatCurrency } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
+import { RecurringRule, TransactionType } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const MAX_VISIBLE_DUE = 3;
+
+const getTypeMeta = (
+  type: TransactionType
+): { color: string; sign: '' | '+' | '-' } => {
+  switch (type) {
+    case 'income':
+      return { color: colors.income, sign: '+' };
+    case 'transfer':
+      return { color: colors.primary, sign: '' };
+    case 'expense':
+    default:
+      return { color: colors.expense, sign: '-' };
+  }
+};
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const settings = useStore((state) => state.settings);
+  const confirmRecurrence = useStore((state) => state.confirmRecurrence);
+  const skipRecurrence = useStore((state) => state.skipRecurrence);
   const { getPeriodSummary, getRecentTransactions } = useTransactions();
+  const { getDueRecurrences } = useAccounts();
 
   const summary = getPeriodSummary('month');
   const recentTransactions = getRecentTransactions(5);
+  const dueRecurrences = getDueRecurrences();
+  const visibleDueRecurrences = dueRecurrences.slice(0, MAX_VISIBLE_DUE);
+  const extraDueCount = dueRecurrences.length - visibleDueRecurrences.length;
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
   return (
@@ -78,6 +104,59 @@ export const HomeScreen: React.FC = () => {
           </View>
         </Card>
 
+        {/* Pending Recurrences */}
+        {dueRecurrences.length > 0 && (
+          <Card style={styles.pendingCard}>
+            <View style={styles.pendingHeader}>
+              <Text style={styles.summaryTitle}>{t('home.pendingRecurrences')}</Text>
+              <Text
+                style={styles.seeAll}
+                onPress={() => navigation.navigate('RecurringList')}
+              >
+                {t('home.seeAll')}
+              </Text>
+            </View>
+
+            {visibleDueRecurrences.map((rule: RecurringRule, index) => {
+              const meta = getTypeMeta(rule.template.type);
+              return (
+                <React.Fragment key={rule.id}>
+                  <View style={styles.pendingRow}>
+                    <View style={styles.pendingInfo}>
+                      <Text style={styles.pendingName} numberOfLines={1}>
+                        {rule.name}
+                      </Text>
+                      <Text style={[styles.pendingAmount, { color: meta.color }]}>
+                        {meta.sign}
+                        {formatCurrency(rule.template.amount, settings.currencySymbol, locale)}
+                      </Text>
+                    </View>
+                    <RecurrenceActions
+                      compact
+                      onConfirm={() => confirmRecurrence(rule.id)}
+                      onSkip={() => skipRecurrence(rule.id)}
+                    />
+                  </View>
+                  {index < visibleDueRecurrences.length - 1 && (
+                    <View style={styles.pendingDivider} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+
+            {extraDueCount > 0 && (
+              <Pressable
+                style={styles.moreRow}
+                onPress={() => navigation.navigate('RecurringList')}
+              >
+                <Text style={styles.moreText}>
+                  {t('home.moreCount', { count: extraDueCount })}
+                </Text>
+              </Pressable>
+            )}
+          </Card>
+        )}
+
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
         <View style={styles.quickActions}>
@@ -100,6 +179,13 @@ export const HomeScreen: React.FC = () => {
             label={t('home.addBalance')}
             color={colors.primary}
             onPress={() => navigation.navigate('AddBalance')}
+          />
+          <View style={styles.actionSpacer} />
+          <QuickActionButton
+            icon="repeat"
+            label={t('recurring.title')}
+            color={colors.categoryColors.suscripciones}
+            onPress={() => navigation.navigate('RecurringList')}
           />
         </View>
 
@@ -165,6 +251,50 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     marginBottom: 24,
+  },
+  pendingCard: {
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.warning,
+  },
+  pendingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  pendingInfo: {
+    flex: 1,
+  },
+  pendingName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  pendingAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  pendingDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  moreRow: {
+    paddingTop: 8,
+  },
+  moreText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
+    textAlign: 'center',
   },
   summaryTitle: {
     fontSize: 14,

@@ -3,3 +3,6 @@ export { TransactionItem } from './TransactionItem';
 export { CategoryChip } from './CategoryChip';
 export { AmountInput } from './AmountInput';
 export { QuickActionButton } from './QuickActionButton';
+export { SegmentedControl } from './SegmentedControl';
+export { Chip } from './Chip';
+export { RecurrenceActions } from './RecurrenceActions';
