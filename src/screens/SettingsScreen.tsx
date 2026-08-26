@@ -6,18 +6,34 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Constants from 'expo-constants';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { t, setLocale } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
+import {
+  validateBackup,
+  writeBackupFile,
+  shareBackupFile,
+  pickAndReadBackupFile,
+  summarizeBackup,
+} from '../utils/backup';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const CURRENCY_OPTIONS: { currency: string; currencySymbol: string; label: string }[] = [
+  { currency: 'EUR', currencySymbol: '€', label: 'EUR €' },
+  { currency: 'USD', currencySymbol: '$', label: 'USD $' },
+  { currency: 'GBP', currencySymbol: '£', label: 'GBP £' },
+];
 
 export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -26,12 +42,19 @@ export const SettingsScreen: React.FC = () => {
   const resetAllData = useStore((state) => state.resetAllData);
   const categories = useStore((state) => state.categories);
 
-  const [, forceUpdate] = useState({});
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleLanguageChange = (language: 'es' | 'en') => {
     updateSettings({ language });
     setLocale(language);
-    forceUpdate({}); // Force re-render to update translations
+    // No hace falta forceUpdate: este componente ya está suscrito a
+    // `state.settings` vía useStore, así que updateSettings provoca su
+    // propio re-render (nueva referencia de `settings`).
+  };
+
+  const handleCurrencyChange = (currency: string, currencySymbol: string) => {
+    updateSettings({ currency, currencySymbol });
   };
 
   const handleResetData = () => {
@@ -45,15 +68,107 @@ export const SettingsScreen: React.FC = () => {
           style: 'destructive',
           onPress: () => {
             resetAllData();
-            Alert.alert(t('common.success'), 'Data deleted');
+            Alert.alert(t('common.success'), t('settings.dataDeletedMessage'));
           },
         },
       ]
     );
   };
 
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const state = useStore.getState();
+      const uri = writeBackupFile({
+        transactions: state.transactions,
+        categories: state.categories,
+        bankAccounts: state.bankAccounts,
+        investments: state.investments,
+        debts: state.debts,
+        provisions: state.provisions,
+        recurringRules: state.recurringRules,
+        plannedEvents: state.plannedEvents,
+        settings: state.settings,
+      });
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await shareBackupFile(uri);
+    } catch (error) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const message =
+        error instanceof Error && error.message === 'sharingUnavailable'
+          ? t('settings.exportSharingUnavailable')
+          : t('settings.exportErrorMessage');
+      Alert.alert(t('settings.exportErrorTitle'), message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const applyImportedBackup = (parsed: unknown) => {
+    const result = validateBackup(parsed);
+    if (!result.ok) {
+      Alert.alert(t('settings.importErrorTitle'), t('settings.importErrorInvalidFile'));
+      return;
+    }
+
+    Alert.alert(
+      t('settings.importConfirmTitle'),
+      t('settings.importConfirmMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            const { data } = result.data;
+            useStore.setState({
+              transactions: data.transactions,
+              categories: data.categories,
+              bankAccounts: data.bankAccounts,
+              investments: data.investments,
+              debts: data.debts,
+              provisions: data.provisions,
+              recurringRules: data.recurringRules,
+              plannedEvents: data.plannedEvents,
+              settings: data.settings,
+            });
+            setLocale(data.settings.language);
+
+            const summary = summarizeBackup(data);
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+              t('settings.importSuccessTitle'),
+              t('settings.importSuccessMessage', summary)
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const handleImport = async () => {
+    if (isImporting) return;
+    setIsImporting(true);
+    try {
+      const parsed = await pickAndReadBackupFile();
+      if (parsed === null) {
+        // Usuario canceló la selección de archivo.
+        return;
+      }
+      applyImportedBackup(parsed);
+    } catch {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(t('settings.importErrorTitle'), t('settings.importErrorGeneric'));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const expenseCategories = categories.filter((c) => c.type === 'expense');
   const incomeCategories = categories.filter((c) => c.type === 'income');
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   const SettingRow = ({
     icon,
@@ -62,6 +177,8 @@ export const SettingsScreen: React.FC = () => {
     onPress,
     showChevron = true,
     danger = false,
+    loading = false,
+    disabled = false,
   }: {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
@@ -69,11 +186,13 @@ export const SettingsScreen: React.FC = () => {
     onPress?: () => void;
     showChevron?: boolean;
     danger?: boolean;
+    loading?: boolean;
+    disabled?: boolean;
   }) => (
     <Pressable
       style={({ pressed }) => [styles.settingRow, pressed && styles.pressed]}
       onPress={onPress}
-      disabled={!onPress}
+      disabled={!onPress || disabled}
     >
       <View style={styles.settingLeft}>
         <Ionicons
@@ -86,9 +205,15 @@ export const SettingsScreen: React.FC = () => {
         </Text>
       </View>
       <View style={styles.settingRight}>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
-        {showChevron && onPress && (
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.textSecondary} />
+        ) : (
+          <>
+            {value && <Text style={styles.settingValue}>{value}</Text>}
+            {showChevron && onPress && (
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            )}
+          </>
         )}
       </View>
     </Pressable>
@@ -122,6 +247,29 @@ export const SettingsScreen: React.FC = () => {
     </Pressable>
   );
 
+  const CurrencyOption = ({
+    currency,
+    currencySymbol,
+    label,
+  }: {
+    currency: string;
+    currencySymbol: string;
+    label: string;
+  }) => {
+    const active = settings.currency === currency;
+    return (
+      <Pressable
+        style={[styles.languageOption, active && styles.languageOptionActive]}
+        onPress={() => handleCurrencyChange(currency, currencySymbol)}
+      >
+        <Text style={[styles.languageText, active && styles.languageTextActive]}>
+          {label}
+        </Text>
+        {active && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+      </Pressable>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -140,6 +288,21 @@ export const SettingsScreen: React.FC = () => {
           <LanguageOption language="es" label={t('settings.spanish')} />
           <View style={styles.divider} />
           <LanguageOption language="en" label={t('settings.english')} />
+        </Card>
+
+        {/* Currency Section */}
+        <Text style={styles.sectionTitle}>{t('settings.currency')}</Text>
+        <Card style={styles.card}>
+          {CURRENCY_OPTIONS.map((option, index) => (
+            <React.Fragment key={option.currency}>
+              {index > 0 && <View style={styles.divider} />}
+              <CurrencyOption
+                currency={option.currency}
+                currencySymbol={option.currencySymbol}
+                label={option.label}
+              />
+            </React.Fragment>
+          ))}
         </Card>
 
         {/* Categories Section */}
@@ -161,23 +324,29 @@ export const SettingsScreen: React.FC = () => {
         </Card>
 
         {/* Data Section */}
-        <Text style={styles.sectionTitle}>Data</Text>
+        <Text style={styles.sectionTitle}>{t('settings.data')}</Text>
         <Card style={styles.card}>
           <SettingRow
             icon="download-outline"
-            label={t('settings.exportData')}
-            onPress={() => Alert.alert('Coming soon', 'Export feature coming soon')}
+            label={isExporting ? t('settings.exportingData') : t('settings.exportData')}
+            onPress={handleExport}
+            loading={isExporting}
+            disabled={isExporting}
+            showChevron={false}
           />
           <View style={styles.divider} />
           <SettingRow
             icon="cloud-upload-outline"
-            label={t('settings.importData')}
-            onPress={() => Alert.alert('Coming soon', 'Import feature coming soon')}
+            label={isImporting ? t('settings.importingData') : t('settings.importData')}
+            onPress={handleImport}
+            loading={isImporting}
+            disabled={isImporting}
+            showChevron={false}
           />
         </Card>
 
         {/* Danger Zone */}
-        <Text style={[styles.sectionTitle, styles.dangerSection]}>Danger Zone</Text>
+        <Text style={[styles.sectionTitle, styles.dangerSection]}>{t('settings.dangerZone')}</Text>
         <Card style={styles.card}>
           <SettingRow
             icon="trash-outline"
@@ -194,7 +363,7 @@ export const SettingsScreen: React.FC = () => {
           <SettingRow
             icon="information-circle-outline"
             label={t('app.name')}
-            value="v1.0.0"
+            value={`v${appVersion}`}
             showChevron={false}
           />
         </Card>
