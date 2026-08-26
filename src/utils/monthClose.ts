@@ -1,5 +1,5 @@
 import { BankAccount, Investment, Debt, BalanceEntry } from '../types';
-import { getAccountBalance } from '../hooks/useAccounts';
+import { getAccountBalance, getPreviousInvestmentValue } from '../hooks/useAccounts';
 
 // ---- Pure, testable helpers for the Month Close flow ----
 
@@ -66,17 +66,12 @@ export const getAccountBalanceDiffs = (accounts: BankAccount[]): AccountBalanceD
       };
     });
 
-export interface PreviousInvestmentSnapshot {
-  id: string;
-  previousValue?: number;
-}
-
 /**
- * Patrimonio neto del cierre anterior. Las cuentas usan el penúltimo
- * BalanceEntry (el que había justo antes del cierre actual); las
- * inversiones no guardan histórico de valor, así que se necesita un
- * snapshot tomado ANTES de aplicar los cambios de este cierre; las deudas
- * son de solo lectura en este flujo, así que se usa su estado actual.
+ * Patrimonio neto del cierre anterior. Tanto las cuentas como las
+ * inversiones derivan su valor anterior de su histórico persistido (el
+ * penúltimo BalanceEntry / InvestmentValueEntry por fecha, es decir, el
+ * que había justo antes del cierre actual); las deudas son de solo lectura
+ * en este flujo, así que se usa su estado actual.
  *
  * Devuelve undefined cuando no hay ningún dato previo (primer cierre):
  * ninguna cuenta activa tiene un saldo anterior al último y ninguna
@@ -84,7 +79,7 @@ export interface PreviousInvestmentSnapshot {
  */
 export const computePreviousNetWorth = (
   accounts: BankAccount[],
-  investmentSnapshots: PreviousInvestmentSnapshot[],
+  investments: Investment[],
   debts: Debt[]
 ): number | undefined => {
   const activeAccounts = accounts.filter((a) => !a.archived);
@@ -94,10 +89,10 @@ export const computePreviousNetWorth = (
     previous: getPreviousAccountBalance(a),
   }));
 
+  const investmentPrevious = investments.map((i) => getPreviousInvestmentValue(i));
+
   const hasAnyAccountHistory = accountPrevious.some((x) => x.previous !== undefined);
-  const hasAnyInvestmentHistory = investmentSnapshots.some(
-    (s) => s.previousValue !== undefined
-  );
+  const hasAnyInvestmentHistory = investmentPrevious.some((v) => v !== undefined);
 
   if (!hasAnyAccountHistory && !hasAnyInvestmentHistory) {
     return undefined;
@@ -108,14 +103,7 @@ export const computePreviousNetWorth = (
     0
   );
 
-  const investmentsTotal = investmentSnapshots.reduce(
-    (sum, s) => sum + (s.previousValue ?? 0),
-    0
-  );
+  const investmentsTotal = investmentPrevious.reduce<number>((sum, v) => sum + (v ?? 0), 0);
 
   return accountsTotal + investmentsTotal + getDebtsNetImpact(debts);
 };
-
-/** Construye el snapshot de inversiones a partir del estado actual (llamar ANTES de mutar el store). */
-export const snapshotInvestments = (investments: Investment[]): PreviousInvestmentSnapshot[] =>
-  investments.map((i) => ({ id: i.id, previousValue: i.currentValue }));

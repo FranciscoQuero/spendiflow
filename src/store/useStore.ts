@@ -7,6 +7,7 @@ import {
   Category,
   BankAccount,
   Investment,
+  InvestmentValueEntry,
   Debt,
   Provision,
   RecurringRule,
@@ -176,10 +177,17 @@ interface StoreState {
   addBalanceEntry: (accountId: string, entry: Omit<BalanceEntry, 'id'>) => void;
 
   // Investment Actions
-  addInvestment: (investment: Omit<Investment, 'id' | 'createdAt' | 'contributions'>) => string;
+  addInvestment: (
+    investment: Omit<Investment, 'id' | 'createdAt' | 'contributions' | 'valueHistory'>
+  ) => string;
   updateInvestment: (id: string, updates: Partial<Investment>) => void;
   deleteInvestment: (id: string) => void;
   addContribution: (investmentId: string, contribution: Omit<Contribution, 'id'>) => void;
+  addInvestmentValueEntry: (
+    investmentId: string,
+    entry: Omit<InvestmentValueEntry, 'id'>
+  ) => void;
+  deleteInvestmentValueEntry: (investmentId: string, entryId: string) => void;
 
   // Debt Actions
   addDebt: (debt: Omit<Debt, 'id' | 'createdAt' | 'payments'>) => string;
@@ -219,14 +227,23 @@ const initialSettings: AppSettings = {
   theme: 'system',
 };
 
-const STORE_VERSION = 2;
+const STORE_VERSION = 3;
 
 const asRecordArray = (value: unknown): Record<string, unknown>[] =>
   Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
 
+/** Entrada más reciente de una lista fechada, ordenando por fecha (no por posición). */
+const latestEntryByDate = <T extends { date: string }>(entries: T[]): T | undefined => {
+  if (entries.length === 0) return undefined;
+  const sorted = [...entries].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  return sorted[sorted.length - 1];
+};
+
 /**
- * Migra un estado persistido (v0/v1/undefined, potencialmente parcial) a la
- * forma v2, rellenando los campos nuevos con sus valores por defecto.
+ * Migra un estado persistido (v0/v1/v2/undefined, potencialmente parcial) a
+ * la forma v3, rellenando los campos nuevos con sus valores por defecto.
  * Exportada para poder testearla de forma aislada.
  */
 export const migrate = (persistedState: unknown): StoreState => {
@@ -251,9 +268,27 @@ export const migrate = (persistedState: unknown): StoreState => {
     balanceHistory: Array.isArray(a.balanceHistory) ? a.balanceHistory : [],
   })) as unknown as BankAccount[];
 
-  const investments = Array.isArray(state.investments)
-    ? (state.investments as Investment[])
-    : [];
+  const investments = asRecordArray(state.investments).map((i) => {
+    if (Array.isArray(i.valueHistory)) {
+      // Ya migrado en una versión anterior de esta misma función (v3+).
+      return { ...i, valueHistory: i.valueHistory } as unknown as Investment;
+    }
+    const currentValue = typeof i.currentValue === 'number' ? i.currentValue : undefined;
+    const valueHistory: InvestmentValueEntry[] =
+      currentValue !== undefined
+        ? [
+            {
+              id: uuidv4(),
+              value: currentValue,
+              date:
+                (i.lastUpdated as string | undefined) ??
+                (i.createdAt as string | undefined) ??
+                new Date().toISOString(),
+            },
+          ]
+        : [];
+    return { ...i, valueHistory } as unknown as Investment;
+  }) as unknown as Investment[];
 
   const migratedDebts = asRecordArray(state.debts).map((d) => ({
     ...d,
@@ -458,6 +493,7 @@ export const useStore = create<StoreState>()(
               ...investment,
               id,
               contributions: [],
+              valueHistory: [],
               createdAt: new Date().toISOString(),
             },
           ],
@@ -490,6 +526,49 @@ export const useStore = create<StoreState>()(
                 }
               : i
           ),
+        })),
+
+      addInvestmentValueEntry: (investmentId, entry) =>
+        set((state) => ({
+          investments: state.investments.map((i) => {
+            if (i.id !== investmentId) return i;
+
+            const newEntry: InvestmentValueEntry = { ...entry, id: uuidv4() };
+            const newEntryDay = new Date(newEntry.date).toDateString();
+            // Si ya hay una entrada del mismo día, la sustituye en vez de
+            // duplicarla (evita histórico ruidoso en cierres repetidos).
+            const valueHistory = [
+              ...i.valueHistory.filter(
+                (e) => new Date(e.date).toDateString() !== newEntryDay
+              ),
+              newEntry,
+            ];
+            const latest = latestEntryByDate(valueHistory);
+
+            return {
+              ...i,
+              valueHistory,
+              currentValue: latest?.value,
+              lastUpdated: latest?.date,
+            };
+          }),
+        })),
+
+      deleteInvestmentValueEntry: (investmentId, entryId) =>
+        set((state) => ({
+          investments: state.investments.map((i) => {
+            if (i.id !== investmentId) return i;
+
+            const valueHistory = i.valueHistory.filter((e) => e.id !== entryId);
+            const latest = latestEntryByDate(valueHistory);
+
+            return {
+              ...i,
+              valueHistory,
+              currentValue: latest?.value,
+              lastUpdated: latest?.date,
+            };
+          }),
         })),
 
       // Debt Actions

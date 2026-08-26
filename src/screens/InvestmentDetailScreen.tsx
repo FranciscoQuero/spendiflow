@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
+import { getInvestmentValue } from '../hooks/useAccounts';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
@@ -23,6 +24,25 @@ import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 
 type RouteProps = RouteProp<RootStackParamList, 'InvestmentDetail'>;
+
+const investmentTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'stocks':
+      return t('accounts.investmentTypes.stocks');
+    case 'crypto':
+      return t('accounts.investmentTypes.crypto');
+    case 'fund':
+      return t('accounts.investmentTypes.fund');
+    case 'etf':
+      return t('accounts.investmentTypes.etf');
+    case 'pension':
+      return t('accounts.investmentTypes.pension');
+    case 'other':
+      return t('accounts.investmentTypes.other');
+    default:
+      return type;
+  }
+};
 
 export const InvestmentDetailScreen: React.FC = () => {
   const theme = useTheme();
@@ -35,13 +55,15 @@ export const InvestmentDetailScreen: React.FC = () => {
   const investments = useStore((state) => state.investments);
   const deleteInvestment = useStore((state) => state.deleteInvestment);
   const addContribution = useStore((state) => state.addContribution);
-  const updateInvestment = useStore((state) => state.updateInvestment);
+  const addInvestmentValueEntry = useStore((state) => state.addInvestmentValueEntry);
+  const deleteInvestmentValueEntry = useStore((state) => state.deleteInvestmentValueEntry);
   const settings = useStore((state) => state.settings);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showValueModal, setShowValueModal] = useState(false);
   const [newAmount, setNewAmount] = useState('');
   const [note, setNote] = useState('');
+  const [valueNote, setValueNote] = useState('');
 
   const investment = investments.find((i) => i.id === id);
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
@@ -50,6 +72,16 @@ export const InvestmentDetailScreen: React.FC = () => {
     if (!investment) return 0;
     return investment.contributions.reduce((sum, c) => sum + c.amount, 0);
   }, [investment]);
+
+  const sortedValueHistory = useMemo(() => {
+    if (!investment) return [];
+    return [...investment.valueHistory].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [investment]);
+
+  const hasValue = !!investment && investment.currentValue !== undefined;
+  const currentValue = investment ? getInvestmentValue(investment) : 0;
 
   if (!investment) {
     return (
@@ -111,18 +143,31 @@ export const InvestmentDetailScreen: React.FC = () => {
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateInvestment(id, {
-      currentValue: parsedAmount,
-      lastUpdated: getDateISO(),
+    addInvestmentValueEntry(id, {
+      value: parsedAmount,
+      date: getDateISO(),
+      note: valueNote.trim() || undefined,
     });
 
     setNewAmount('');
+    setValueNote('');
     setShowValueModal(false);
   };
 
+  const handleDeleteValueEntry = (entryId: string) => {
+    Alert.alert(t('common.delete'), t('accounts.deleteValueEntryConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: () => deleteInvestmentValueEntry(id, entryId),
+      },
+    ]);
+  };
+
   const returnPercent =
-    investment.currentValue && totalContributed > 0
-      ? ((investment.currentValue - totalContributed) / totalContributed) * 100
+    hasValue && totalContributed > 0
+      ? ((currentValue - totalContributed) / totalContributed) * 100
       : 0;
 
   return (
@@ -141,7 +186,7 @@ export const InvestmentDetailScreen: React.FC = () => {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Summary Card */}
         <Card style={styles.summaryCard}>
-          <Text style={styles.investmentType}>{investment.type}</Text>
+          <Text style={styles.investmentType}>{investmentTypeLabel(investment.type)}</Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -150,17 +195,17 @@ export const InvestmentDetailScreen: React.FC = () => {
                 {formatCurrency(totalContributed, settings.currencySymbol, locale)}
               </Text>
             </View>
-            {investment.currentValue && (
+            {hasValue && (
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>{t('accounts.currentValue')}</Text>
                 <Text style={[styles.statValue, { color: theme.primary }]}>
-                  {formatCurrency(investment.currentValue, settings.currencySymbol, locale)}
+                  {formatCurrency(currentValue, settings.currencySymbol, locale)}
                 </Text>
               </View>
             )}
           </View>
 
-          {investment.currentValue && (
+          {hasValue && (
             <View style={styles.returnContainer}>
               <Text style={styles.returnLabel}>{t('accounts.return')}</Text>
               <Text
@@ -221,6 +266,53 @@ export const InvestmentDetailScreen: React.FC = () => {
             <Text style={styles.emptyText}>{t('accounts.noContributions')}</Text>
           )}
         </Card>
+
+        {/* Value History */}
+        <Text style={styles.sectionTitle}>{t('accounts.valueHistory')}</Text>
+        <Card>
+          {sortedValueHistory.length > 0 ? (
+            sortedValueHistory.map((entry, index) => {
+              const previousEntry = sortedValueHistory[index + 1];
+              const diff = previousEntry ? entry.value - previousEntry.value : undefined;
+              return (
+                <View key={entry.id}>
+                  <View style={styles.historyRow}>
+                    <View style={styles.valueHistoryInfo}>
+                      <Text style={styles.historyDate}>{formatDate(entry.date, locale)}</Text>
+                      {entry.note && <Text style={styles.historyNote}>{entry.note}</Text>}
+                    </View>
+                    <View style={styles.valueHistoryRight}>
+                      <Text style={[styles.historyAmount, { color: theme.text }]}>
+                        {formatCurrency(entry.value, settings.currencySymbol, locale)}
+                      </Text>
+                      {diff !== undefined && (
+                        <Text
+                          style={[
+                            styles.valueHistoryDiff,
+                            { color: diff >= 0 ? theme.income : theme.expense },
+                          ]}
+                        >
+                          {diff >= 0 ? '+' : ''}
+                          {formatCurrency(diff, settings.currencySymbol, locale)}
+                        </Text>
+                      )}
+                    </View>
+                    <Pressable
+                      onPress={() => handleDeleteValueEntry(entry.id)}
+                      style={styles.valueHistoryDeleteButton}
+                      hitSlop={8}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                    </Pressable>
+                  </View>
+                  {index < sortedValueHistory.length - 1 && <View style={styles.divider} />}
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>{t('accounts.noValueHistory')}</Text>
+          )}
+        </Card>
       </ScrollView>
 
       {/* Add Contribution Modal */}
@@ -263,6 +355,14 @@ export const InvestmentDetailScreen: React.FC = () => {
           </View>
           <View style={styles.modalContent}>
             <AmountInput value={newAmount} onChangeText={setNewAmount} type="income" />
+            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+            <TextInput
+              style={styles.input}
+              value={valueNote}
+              onChangeText={setValueNote}
+              placeholder={t('addTransaction.notePlaceholder')}
+              placeholderTextColor={theme.textSecondary}
+            />
           </View>
         </SafeAreaView>
       </Modal>
@@ -404,6 +504,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.income,
+  },
+  valueHistoryInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  valueHistoryRight: {
+    alignItems: 'flex-end',
+    marginRight: 12,
+  },
+  valueHistoryDiff: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  valueHistoryDeleteButton: {
+    padding: 4,
   },
   divider: {
     height: 1,

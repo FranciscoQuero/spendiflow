@@ -231,6 +231,18 @@ export default {
     updateCurrentValue: 'Update current value',
     contributions: 'Contributions',
     noContributions: 'No contributions yet',
+    investmentTypes: {
+      stocks: 'Stocks',
+      crypto: 'Crypto',
+      fund: 'Investment fund',
+      etf: 'ETF',
+      pension: 'Pension plan',
+      other: 'Other',
+    },
+    valueHistory: 'Value history',
+    noValueHistory: 'No value history',
+    newValue: 'New value',
+    deleteValueEntryConfirm: 'Delete this value history entry?',
   },
 
   // Settings

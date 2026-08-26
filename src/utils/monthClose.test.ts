@@ -5,7 +5,7 @@ import {
   hasBalanceEntryInMonth,
   getDebtsNetImpact,
 } from './monthClose';
-import { BankAccount, Debt } from '../types';
+import { BankAccount, Debt, Investment } from '../types';
 
 const makeAccount = (overrides: Partial<BankAccount> = {}): BankAccount => ({
   id: 'a1',
@@ -15,6 +15,16 @@ const makeAccount = (overrides: Partial<BankAccount> = {}): BankAccount => ({
   ownershipShare: 1,
   archived: false,
   balanceHistory: [],
+  createdAt: '2026-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
+const makeInvestment = (overrides: Partial<Investment> = {}): Investment => ({
+  id: 'i1',
+  name: 'Fondo',
+  type: 'fund',
+  contributions: [],
+  valueHistory: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
@@ -91,10 +101,66 @@ describe('computePreviousNetWorth', () => {
     expect(result).toBe(0);
   });
 
-  it('usa el snapshot previo de inversiones cuando existe', () => {
+  it('usa el valor previo del histórico de la inversión cuando existe', () => {
     const accounts = [makeAccount()];
-    const result = computePreviousNetWorth(accounts, [{ id: 'i1', previousValue: 500 }], []);
+    const investments = [
+      makeInvestment({
+        valueHistory: [
+          { id: 'v1', value: 500, date: '2026-07-26' }, // previous
+          { id: 'v2', value: 600, date: '2026-08-26' }, // current
+        ],
+      }),
+    ];
+    const result = computePreviousNetWorth(accounts, investments, []);
     expect(result).toBe(500);
+  });
+
+  it('inversión sin histórico: no aporta valor previo (primer cierre de esa inversión)', () => {
+    const accounts = [
+      makeAccount({
+        balanceHistory: [
+          { id: 'b1', amount: 100, date: '2026-07-26' },
+          { id: 'b2', amount: 100, date: '2026-08-26' },
+        ],
+      }),
+    ];
+    const investments = [makeInvestment({ valueHistory: [] })];
+    const result = computePreviousNetWorth(accounts, investments, []);
+    // sin aporte de la inversión (sin histórico): solo el saldo previo de la cuenta
+    expect(result).toBe(100);
+  });
+
+  it('inversión con una sola entrada: no hay valor previo con el que comparar', () => {
+    const accounts = [
+      makeAccount({
+        balanceHistory: [
+          { id: 'b1', amount: 100, date: '2026-07-26' },
+          { id: 'b2', amount: 100, date: '2026-08-26' },
+        ],
+      }),
+    ];
+    const investments = [
+      makeInvestment({ valueHistory: [{ id: 'v1', value: 500, date: '2026-08-26' }] }),
+    ];
+    const result = computePreviousNetWorth(accounts, investments, []);
+    expect(result).toBe(100);
+  });
+
+  it('dos cierres el mismo día: la sustitución deja una sola entrada por fecha, sin duplicar el previo', () => {
+    const accounts = [makeAccount()];
+    const investments = [
+      makeInvestment({
+        valueHistory: [
+          { id: 'v1', value: 400, date: '2026-07-26' }, // cierre del mes anterior
+          // El cierre de agosto se declaró dos veces el mismo día; la
+          // acción del store sustituye la primera entrada de ese día, así
+          // que el histórico persistido nunca contiene un duplicado.
+          { id: 'v2', value: 700, date: '2026-08-26' },
+        ],
+      }),
+    ];
+    const result = computePreviousNetWorth(accounts, investments, []);
+    expect(result).toBe(400);
   });
 });
 

@@ -63,9 +63,19 @@ export interface Investment {
   name: string;
   type: string; // e.g., 'stocks', 'crypto', 'fund', 'other'
   contributions: Contribution[];
+  valueHistory: InvestmentValueEntry[];
+  // Caché denormalizada: siempre coherente con la entrada más reciente de
+  // valueHistory por fecha (o undefined si valueHistory está vacío).
   currentValue?: number;
   lastUpdated?: string;
   createdAt: string;
+}
+
+export interface InvestmentValueEntry {
+  id: string;
+  value: number;
+  date: string; // ISO
+  note?: string;
 }
 
 export interface Contribution {

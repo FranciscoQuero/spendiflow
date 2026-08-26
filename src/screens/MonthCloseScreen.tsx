@@ -12,8 +12,6 @@ import {
   computePreviousNetWorth,
   getAccountBalanceDiffs,
   hasBalanceEntryInMonth,
-  snapshotInvestments,
-  PreviousInvestmentSnapshot,
 } from '../utils/monthClose';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -51,7 +49,7 @@ export const MonthCloseScreen: React.FC = () => {
   const investments = useStore((state) => state.investments);
   const debts = useStore((state) => state.debts);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
-  const updateInvestment = useStore((state) => state.updateInvestment);
+  const addInvestmentValueEntry = useStore((state) => state.addInvestmentValueEntry);
   const settings = useStore((state) => state.settings);
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
@@ -76,9 +74,6 @@ export const MonthCloseScreen: React.FC = () => {
   const [initialInvestmentValues] = useState<Record<string, number>>(() =>
     Object.fromEntries(investments.map((i) => [i.id, i.currentValue ?? 0]))
   );
-  const [investmentSnapshotAtSave, setInvestmentSnapshotAtSave] = useState<
-    PreviousInvestmentSnapshot[]
-  >([]);
 
   const monthName = getMonthName(getCurrentMonth(), locale, 'long').toLowerCase();
   const headerTitle = t('monthClose.header', { month: monthName, year: getCurrentYear() });
@@ -101,7 +96,6 @@ export const MonthCloseScreen: React.FC = () => {
     const today = getDateISO();
     const month = getCurrentMonth();
     const year = getCurrentYear();
-    const snapshot = snapshotInvestments(investments);
 
     activeAccounts.forEach((account) => {
       const parsed = parseNumber(accountInputs[account.id] ?? '');
@@ -117,12 +111,11 @@ export const MonthCloseScreen: React.FC = () => {
       const parsed = parseNumber(investmentInputs[investment.id] ?? '');
       const original = initialInvestmentValues[investment.id] ?? 0;
       if (parsed !== original) {
-        updateInvestment(investment.id, { currentValue: parsed, lastUpdated: today });
+        addInvestmentValueEntry(investment.id, { value: parsed, date: today });
       }
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setInvestmentSnapshotAtSave(snapshot);
     setPhase('summary');
   };
 
@@ -132,8 +125,8 @@ export const MonthCloseScreen: React.FC = () => {
     [bankAccounts, investments, debts]
   );
   const previousNetWorth = useMemo(
-    () => computePreviousNetWorth(bankAccounts, investmentSnapshotAtSave, debts),
-    [bankAccounts, investmentSnapshotAtSave, debts]
+    () => computePreviousNetWorth(bankAccounts, investments, debts),
+    [bankAccounts, investments, debts]
   );
   const variation =
     previousNetWorth !== undefined ? netWorth - previousNetWorth : undefined;

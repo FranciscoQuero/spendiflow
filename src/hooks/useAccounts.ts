@@ -37,6 +37,39 @@ export const getAvailableBalance = (
 export const getMyShareBalance = (account: BankAccount): number =>
   getAccountBalance(account) * account.ownershipShare;
 
+/** Valor de una inversión: la entrada más reciente por fecha, o `currentValue` como fallback si no hay histórico. */
+export const getInvestmentValue = (investment: Investment): number => {
+  if (investment.valueHistory.length === 0) return investment.currentValue ?? 0;
+  const sorted = [...investment.valueHistory].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  return sorted[sorted.length - 1].value;
+};
+
+/**
+ * Valor previo de una inversión: la penúltima entrada por fecha, o la última
+ * entrada anterior a `beforeDate` cuando se indica. `undefined` si no hay
+ * ningún valor anterior con el que comparar.
+ */
+export const getPreviousInvestmentValue = (
+  investment: Investment,
+  beforeDate?: string
+): number | undefined => {
+  const sorted = [...investment.valueHistory].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  if (beforeDate === undefined) {
+    if (sorted.length < 2) return undefined;
+    return sorted[sorted.length - 2].value;
+  }
+
+  const beforeTime = new Date(beforeDate).getTime();
+  const priorEntries = sorted.filter((e) => new Date(e.date).getTime() < beforeTime);
+  if (priorEntries.length === 0) return undefined;
+  return priorEntries[priorEntries.length - 1].value;
+};
+
 const outstandingDebt = (debt: Debt): number =>
   Math.max(debt.totalAmount - debt.payments.reduce((sum, p) => sum + p.amount, 0), 0);
 
@@ -49,7 +82,7 @@ export const getNetWorth = (
     .filter((a) => !a.archived)
     .reduce((sum, a) => sum + getMyShareBalance(a), 0);
 
-  const investmentsTotal = investments.reduce((sum, i) => sum + (i.currentValue ?? 0), 0);
+  const investmentsTotal = investments.reduce((sum, i) => sum + getInvestmentValue(i), 0);
 
   const iOweTotal = debts
     .filter((d) => d.direction === 'iOwe')

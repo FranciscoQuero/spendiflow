@@ -231,6 +231,18 @@ export default {
     updateCurrentValue: 'Actualizar valor actual',
     contributions: 'Aportaciones',
     noContributions: 'Sin aportaciones todavía',
+    investmentTypes: {
+      stocks: 'Acciones',
+      crypto: 'Cripto',
+      fund: 'Fondo de inversión',
+      etf: 'ETF',
+      pension: 'Plan de pensiones',
+      other: 'Otro',
+    },
+    valueHistory: 'Historial de valor',
+    noValueHistory: 'Sin historial de valor',
+    newValue: 'Nuevo valor',
+    deleteValueEntryConfirm: '¿Eliminar esta entrada del historial de valor?',
   },
 
   // Settings

@@ -2,6 +2,8 @@ import {
   getAccountBalance,
   getAvailableBalance,
   getNetWorth,
+  getInvestmentValue,
+  getPreviousInvestmentValue,
 } from './useAccounts';
 import { BankAccount, Debt, Investment, Provision } from '../types';
 
@@ -13,6 +15,16 @@ const makeAccount = (overrides: Partial<BankAccount> = {}): BankAccount => ({
   ownershipShare: 1,
   archived: false,
   balanceHistory: [],
+  createdAt: '2026-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
+const makeInvestment = (overrides: Partial<Investment> = {}): Investment => ({
+  id: 'inv-1',
+  name: 'Fondo',
+  type: 'fund',
+  contributions: [],
+  valueHistory: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
@@ -96,14 +108,9 @@ describe('getNetWorth', () => {
     ];
 
     const investments: Investment[] = [
-      {
-        id: 'inv-1',
-        name: 'Fondo',
-        type: 'fund',
-        contributions: [],
-        currentValue: 300,
-        createdAt: '2026-01-01T00:00:00.000Z',
-      },
+      makeInvestment({
+        valueHistory: [{ id: 'v1', value: 300, date: '2026-01-01' }],
+      }),
     ];
 
     const debts: Debt[] = [
@@ -131,5 +138,68 @@ describe('getNetWorth', () => {
     // + owedToMe outstanding: 300
     // = 500 + 300 - 800 + 300 = 300
     expect(getNetWorth(accounts, investments, debts)).toBe(300);
+  });
+});
+
+describe('getInvestmentValue', () => {
+  it('returns the entry with the latest date, not the last one in the array', () => {
+    const investment = makeInvestment({
+      valueHistory: [
+        { id: 'v1', value: 100, date: '2026-03-01' },
+        { id: 'v2', value: 50, date: '2026-01-01' }, // inserted out of chronological order
+        { id: 'v3', value: 200, date: '2026-02-01' },
+      ],
+    });
+
+    expect(getInvestmentValue(investment)).toBe(100);
+  });
+
+  it('falls back to currentValue when valueHistory is empty', () => {
+    const investment = makeInvestment({ valueHistory: [], currentValue: 42 });
+    expect(getInvestmentValue(investment)).toBe(42);
+  });
+
+  it('returns 0 when there is neither history nor a currentValue', () => {
+    expect(getInvestmentValue(makeInvestment())).toBe(0);
+  });
+});
+
+describe('getPreviousInvestmentValue', () => {
+  it('returns undefined with 0 or 1 entries', () => {
+    expect(getPreviousInvestmentValue(makeInvestment({ valueHistory: [] }))).toBeUndefined();
+    expect(
+      getPreviousInvestmentValue(
+        makeInvestment({ valueHistory: [{ id: 'v1', value: 100, date: '2026-08-01' }] })
+      )
+    ).toBeUndefined();
+  });
+
+  it('returns the penultimate value ordered by date when no beforeDate is given', () => {
+    const investment = makeInvestment({
+      valueHistory: [
+        { id: 'v2', value: 200, date: '2026-08-26' },
+        { id: 'v1', value: 100, date: '2026-07-26' },
+        { id: 'v0', value: 50, date: '2026-06-26' },
+      ],
+    });
+    expect(getPreviousInvestmentValue(investment)).toBe(100);
+  });
+
+  it('returns the latest entry strictly before beforeDate', () => {
+    const investment = makeInvestment({
+      valueHistory: [
+        { id: 'v1', value: 100, date: '2026-06-01' },
+        { id: 'v2', value: 200, date: '2026-07-01' },
+        { id: 'v3', value: 300, date: '2026-08-01' },
+      ],
+    });
+    expect(getPreviousInvestmentValue(investment, '2026-07-15')).toBe(200);
+  });
+
+  it('returns undefined when there is no entry before beforeDate', () => {
+    const investment = makeInvestment({
+      valueHistory: [{ id: 'v1', value: 100, date: '2026-08-01' }],
+    });
+    expect(getPreviousInvestmentValue(investment, '2026-01-01')).toBeUndefined();
   });
 });
