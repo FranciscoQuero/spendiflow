@@ -5,12 +5,15 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart, LineChart } from 'react-native-chart-kit';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Chip } from '../components/Chip';
+import { OptionSheet, OptionSheetOption } from '../components/OptionSheet';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
@@ -18,6 +21,7 @@ import { useTheme } from '../theme/useTheme';
 import { Theme, hexToRgba } from '../theme/colors';
 import { formatCurrency, formatPercentage, getMonthName } from '../utils/formatters';
 import { computeMonthlyNetWorthSeries } from '../utils/netWorthHistory';
+import { getPeriodRange, shiftPeriod, formatPeriodLabel } from '../utils/periods';
 import { ChartPeriod, TransactionScope } from '../types';
 import { t } from '../locales/i18n';
 
@@ -26,11 +30,20 @@ const CHART_WIDTH = SCREEN_WIDTH - 40;
 
 type ChartsView = 'flow' | 'netWorth';
 
+/** Sentinela usado en la sheet de ámbito para representar "sin filtro" (Todos). */
+type ScopeOptionValue = TransactionScope | 'all';
+
 const PERIOD_OPTIONS: { value: ChartPeriod; labelKey: 'charts.week' | 'charts.month' | 'charts.quarter' | 'charts.year' }[] = [
   { value: 'week', labelKey: 'charts.week' },
   { value: 'month', labelKey: 'charts.month' },
   { value: 'quarter', labelKey: 'charts.quarter' },
   { value: 'year', labelKey: 'charts.year' },
+];
+
+const SCOPE_OPTIONS: { value: ScopeOptionValue; labelKey: 'charts.scopeAll' | 'charts.scopePersonal' | 'charts.scopeBusiness'; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'all', labelKey: 'charts.scopeAll', icon: 'apps-outline' },
+  { value: 'personal', labelKey: 'charts.scopePersonal', icon: 'person-outline' },
+  { value: 'business', labelKey: 'charts.scopeBusiness', icon: 'briefcase-outline' },
 ];
 
 const formatMonthLabel = (year: number, month: number, locale: string): string => {
@@ -44,24 +57,76 @@ export const ChartsScreen: React.FC = () => {
 
   const [view, setView] = useState<ChartsView>('flow');
   const [period, setPeriod] = useState<ChartPeriod>('month');
+  // Ancla del período mostrado: cualquier fecha dentro del período activo.
+  // Por defecto, hoy (el período actual).
+  const [anchor, setAnchor] = useState<Date>(() => new Date());
   const [scopeFilter, setScopeFilter] = useState<TransactionScope | undefined>(undefined);
+  const [granularitySheetOpen, setGranularitySheetOpen] = useState(false);
+  const [scopeSheetOpen, setScopeSheetOpen] = useState(false);
   const settings = useStore((state) => state.settings);
   const { getPeriodSummary, getDailyTotals } = useTransactions();
   const { bankAccounts, investments, debts } = useAccounts();
 
-  const toggleScope = (value: TransactionScope) => {
-    setScopeFilter((prev) => (prev === value ? undefined : value));
+  const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
+
+  const periodLabel = useMemo(
+    () => formatPeriodLabel(period, anchor, locale),
+    [period, anchor, locale]
+  );
+
+  // El chevron "siguiente" se deshabilita cuando el período mostrado ya es
+  // el actual: no se navega al futuro.
+  const isCurrentPeriod = useMemo(
+    () =>
+      getPeriodRange(period, anchor).start.getTime() ===
+      getPeriodRange(period, new Date()).start.getTime(),
+    [period, anchor]
+  );
+
+  const goToPreviousPeriod = () => {
+    Haptics.selectionAsync();
+    setAnchor((prev) => shiftPeriod(period, prev, -1));
   };
 
+  const goToNextPeriod = () => {
+    if (isCurrentPeriod) return;
+    Haptics.selectionAsync();
+    setAnchor((prev) => shiftPeriod(period, prev, 1));
+  };
+
+  const handleGranularityChange = (value: ChartPeriod) => {
+    setPeriod(value);
+    // Al cambiar la granularidad, el ancla vuelve al período actual.
+    setAnchor(new Date());
+  };
+
+  const handleScopeChange = (value: ScopeOptionValue) => {
+    setScopeFilter(value === 'all' ? undefined : value);
+  };
+
+  // Listas pequeñas y baratas de recomputar: sin useMemo para no tener que
+  // forzar `settings.language` como dependencia artificial de `t()`.
+  const granularityOptions: OptionSheetOption<ChartPeriod>[] = PERIOD_OPTIONS.map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+  }));
+
+  const scopeOptions: OptionSheetOption<ScopeOptionValue>[] = SCOPE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+    icon: option.icon,
+  }));
+
+  const currentGranularityLabel = t(PERIOD_OPTIONS.find((o) => o.value === period)?.labelKey ?? 'charts.month');
+
   const summary = useMemo(
-    () => getPeriodSummary(period, undefined, scopeFilter),
-    [period, scopeFilter, getPeriodSummary]
+    () => getPeriodSummary(period, anchor, scopeFilter),
+    [period, anchor, scopeFilter, getPeriodSummary]
   );
   const dailyTotals = useMemo(
-    () => getDailyTotals(period, 'expense', scopeFilter),
-    [period, scopeFilter, getDailyTotals]
+    () => getDailyTotals(period, 'expense', scopeFilter, anchor),
+    [period, anchor, scopeFilter, getDailyTotals]
   );
-  const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
   const pieData = useMemo(() => {
     if (summary.byCategory.length === 0) {
@@ -156,37 +221,57 @@ export const ChartsScreen: React.FC = () => {
 
         {view === 'flow' ? (
           <>
-            {/* Filtros: período (chips) + ámbito (chips de filtro togglables) */}
-            <View style={styles.filterRow}>
-              <View style={styles.periodGroup}>
-                {PERIOD_OPTIONS.map((option) => (
-                  <Chip
-                    key={option.value}
-                    label={t(option.labelKey)}
-                    selected={period === option.value}
-                    onPress={() => setPeriod(option.value)}
-                    variant="tinted"
-                    dense
+            {/* Controles: stepper de período (izquierda) + granularidad y ámbito (derecha) */}
+            <View style={styles.controlsRow}>
+              <View style={styles.stepper}>
+                <Pressable
+                  hitSlop={12}
+                  onPress={goToPreviousPeriod}
+                  style={styles.stepperChevron}
+                  accessibilityLabel={t('charts.previousPeriod')}
+                >
+                  <Ionicons name="chevron-back" size={20} color={theme.text} />
+                </Pressable>
+                <Text style={styles.stepperLabel} numberOfLines={1}>
+                  {periodLabel}
+                </Text>
+                <Pressable
+                  hitSlop={12}
+                  onPress={goToNextPeriod}
+                  disabled={isCurrentPeriod}
+                  style={styles.stepperChevron}
+                  accessibilityLabel={t('charts.nextPeriod')}
+                >
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={isCurrentPeriod ? theme.border : theme.text}
                   />
-                ))}
+                </Pressable>
               </View>
-              <View style={styles.scopeGroup}>
-                <Chip
-                  label={t('charts.scopePersonal')}
-                  selected={scopeFilter === 'personal'}
-                  onPress={() => toggleScope('personal')}
-                  icon="person-outline"
-                  variant="tinted"
-                  dense
-                />
-                <Chip
-                  label={t('charts.scopeBusiness')}
-                  selected={scopeFilter === 'business'}
-                  onPress={() => toggleScope('business')}
-                  icon="briefcase-outline"
-                  variant="tinted"
-                  dense
-                />
+
+              <View style={styles.controlsRight}>
+                <Pressable
+                  style={styles.granularityPill}
+                  onPress={() => setGranularitySheetOpen(true)}
+                  accessibilityLabel={t('charts.changeGranularity')}
+                >
+                  <Text style={styles.granularityPillText}>{currentGranularityLabel}</Text>
+                  <Ionicons name="chevron-down" size={14} color={theme.textSecondary} />
+                </Pressable>
+
+                <Pressable
+                  style={styles.filterButton}
+                  onPress={() => setScopeSheetOpen(true)}
+                  accessibilityLabel={t('charts.openFilters')}
+                >
+                  <Ionicons
+                    name={scopeFilter !== undefined ? 'funnel' : 'funnel-outline'}
+                    size={18}
+                    color={theme.text}
+                  />
+                  {scopeFilter !== undefined && <View style={styles.filterBadge} />}
+                </Pressable>
               </View>
             </View>
 
@@ -350,6 +435,24 @@ export const ChartsScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+
+      <OptionSheet
+        visible={granularitySheetOpen}
+        onClose={() => setGranularitySheetOpen(false)}
+        title={t('charts.granularitySheetTitle')}
+        options={granularityOptions}
+        selectedValue={period}
+        onSelect={handleGranularityChange}
+      />
+
+      <OptionSheet
+        visible={scopeSheetOpen}
+        onClose={() => setScopeSheetOpen(false)}
+        title={t('charts.scopeSheetTitle')}
+        options={scopeOptions}
+        selectedValue={scopeFilter ?? 'all'}
+        onSelect={handleScopeChange}
+      />
     </SafeAreaView>
   );
 };
@@ -374,22 +477,68 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.text,
   },
-  filterRow: {
+  controlsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    rowGap: 8,
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
-  periodGroup: {
+  stepper: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  stepperChevron: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.text,
+    marginHorizontal: 4,
+  },
+  controlsRight: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  scopeGroup: {
+  granularityPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginRight: 8,
+  },
+  granularityPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.text,
+    marginRight: 4,
+  },
+  filterButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.primary,
   },
   summaryCard: {
     alignItems: 'center',
