@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore';
 interface AmountInputProps {
   value: string;
   onChangeText: (value: string) => void;
-  type?: 'expense' | 'income';
+  type?: 'expense' | 'income' | 'transfer';
   autoFocus?: boolean;
 }
 
@@ -18,6 +18,12 @@ export const AmountInput: React.FC<AmountInputProps> = ({
 }) => {
   const settings = useStore((state) => state.settings);
   const [isFocused, setIsFocused] = useState(false);
+  const colorStyle =
+    type === 'income'
+      ? styles.incomeText
+      : type === 'transfer'
+      ? styles.transferText
+      : styles.expenseText;
 
   const handleChange = (text: string) => {
     // Allow only numbers, comma, and dot
@@ -39,19 +45,12 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   return (
     <View style={styles.container}>
       <Text
-        style={[
-          styles.currency,
-          isFocused && styles.currencyFocused,
-          type === 'income' ? styles.incomeText : styles.expenseText,
-        ]}
+        style={[styles.currency, isFocused && styles.currencyFocused, colorStyle]}
       >
         {settings.currencySymbol}
       </Text>
       <TextInput
-        style={[
-          styles.input,
-          type === 'income' ? styles.incomeText : styles.expenseText,
-        ]}
+        style={[styles.input, colorStyle]}
         value={value}
         onChangeText={handleChange}
         keyboardType="decimal-pad"
@@ -60,7 +59,9 @@ export const AmountInput: React.FC<AmountInputProps> = ({
         autoFocus={autoFocus}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        selectionColor={type === 'income' ? colors.income : colors.expense}
+        selectionColor={
+          type === 'income' ? colors.income : type === 'transfer' ? colors.primary : colors.expense
+        }
       />
     </View>
   );
@@ -93,5 +94,8 @@ const styles = StyleSheet.create({
   },
   incomeText: {
     color: colors.income,
+  },
+  transferText: {
+    color: colors.primary,
   },
 });

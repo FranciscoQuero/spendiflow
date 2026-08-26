@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -19,7 +20,7 @@ import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type FilterType = 'all' | 'expenses' | 'incomes';
+type FilterType = 'all' | 'expenses' | 'incomes' | 'transfers';
 
 export const TransactionsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -34,6 +35,8 @@ export const TransactionsScreen: React.FC = () => {
       filtered = filtered.filter((t) => t.type === 'expense');
     } else if (filter === 'incomes') {
       filtered = filtered.filter((t) => t.type === 'income');
+    } else if (filter === 'transfers') {
+      filtered = filtered.filter((t) => t.type === 'transfer');
     }
 
     // Sort by date descending
@@ -105,11 +108,16 @@ export const TransactionsScreen: React.FC = () => {
         </View>
 
         {/* Filter Tabs */}
-        <View style={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContainer}
+        >
           <FilterButton type="all" label={t('transactions.all')} />
           <FilterButton type="expenses" label={t('transactions.expenses')} />
           <FilterButton type="incomes" label={t('transactions.incomes')} />
-        </View>
+          <FilterButton type="transfers" label={t('transactions.transfers')} />
+        </ScrollView>
 
         {/* Transaction List */}
         <FlatList
@@ -135,6 +143,12 @@ export const TransactionsScreen: React.FC = () => {
             onPress={() => navigation.navigate('AddTransaction', { type: 'expense' })}
           >
             <Ionicons name="remove" size={24} color="white" />
+          </Pressable>
+          <Pressable
+            style={[styles.fab, styles.fabTransfer]}
+            onPress={() => navigation.navigate('AddTransaction', { type: 'transfer' })}
+          >
+            <Ionicons name="swap-horizontal" size={22} color="white" />
           </Pressable>
         </View>
       </View>
@@ -230,5 +244,11 @@ const styles = StyleSheet.create({
   },
   fabIncome: {
     backgroundColor: colors.income,
+  },
+  fabTransfer: {
+    backgroundColor: colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
 });
