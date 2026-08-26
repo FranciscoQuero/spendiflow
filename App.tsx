@@ -10,6 +10,10 @@ import { setLocale, t } from './src/locales/i18n';
 import { useThemeMode } from './src/theme/useTheme';
 import { lightTheme } from './src/theme/colors';
 import { getNavigationTheme } from './src/theme/navigationTheme';
+import { configureNotificationHandler, syncDailyReminder } from './src/utils/reminders';
+
+// Muestra la notificación local aunque la app esté en primer plano.
+configureNotificationHandler();
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -116,6 +120,22 @@ export default function App() {
   useEffect(() => {
     setLocale(settings.language);
   }, [settings.language]);
+
+  // Sincroniza el recordatorio diario una única vez al arrancar la app, para
+  // que sobreviva a reinstalaciones del binario nativo (que en Android
+  // borran las notificaciones programadas). Si el store del persist aún no
+  // ha hidratado, esperamos a que termine para no sincronizar con los
+  // valores por defecto en lugar de los ajustes guardados del usuario.
+  useEffect(() => {
+    if (useStore.persist.hasHydrated()) {
+      syncDailyReminder(useStore.getState().settings);
+      return;
+    }
+    const unsubscribe = useStore.persist.onFinishHydration((state) => {
+      syncDailyReminder(state.settings);
+    });
+    return unsubscribe;
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

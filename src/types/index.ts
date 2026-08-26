@@ -171,6 +171,11 @@ export interface AppSettings {
   currency: string;
   currencySymbol: string;
   theme: 'light' | 'dark' | 'system';
+  dailyReminder?: {
+    enabled: boolean;
+    hour: number;
+    minute: number;
+  };
 }
 
 // Chart Data Types

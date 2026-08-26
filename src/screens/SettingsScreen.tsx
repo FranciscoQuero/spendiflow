@@ -7,6 +7,8 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  Switch,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +16,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
@@ -28,6 +33,10 @@ import {
   pickAndReadBackupFile,
   summarizeBackup,
 } from '../utils/backup';
+import { formatReminderTime, syncDailyReminder } from '../utils/reminders';
+
+const DEFAULT_REMINDER_HOUR = 21;
+const DEFAULT_REMINDER_MINUTE = 30;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -55,6 +64,12 @@ export const SettingsScreen: React.FC = () => {
 
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSyncingReminder, setIsSyncingReminder] = useState(false);
+  const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
+
+  const reminderEnabled = settings.dailyReminder?.enabled ?? false;
+  const reminderHour = settings.dailyReminder?.hour ?? DEFAULT_REMINDER_HOUR;
+  const reminderMinute = settings.dailyReminder?.minute ?? DEFAULT_REMINDER_MINUTE;
 
   const handleLanguageChange = (language: 'es' | 'en') => {
     updateSettings({ language });
@@ -70,6 +85,56 @@ export const SettingsScreen: React.FC = () => {
 
   const handleThemeChange = (themeSetting: AppSettings['theme']) => {
     updateSettings({ theme: themeSetting });
+  };
+
+  const handleReminderToggle = async (value: boolean) => {
+    if (isSyncingReminder) return;
+    Haptics.selectionAsync();
+
+    const nextReminder: NonNullable<AppSettings['dailyReminder']> = {
+      enabled: value,
+      hour: settings.dailyReminder?.hour ?? DEFAULT_REMINDER_HOUR,
+      minute: settings.dailyReminder?.minute ?? DEFAULT_REMINDER_MINUTE,
+    };
+    updateSettings({ dailyReminder: nextReminder });
+
+    if (!value) {
+      setShowReminderTimePicker(false);
+      await syncDailyReminder(useStore.getState().settings);
+      return;
+    }
+
+    setIsSyncingReminder(true);
+    try {
+      const result = await syncDailyReminder(useStore.getState().settings);
+      if (result.status === 'permission-denied') {
+        updateSettings({ dailyReminder: { ...nextReminder, enabled: false } });
+        Alert.alert(
+          t('settings.dailyReminderPermissionTitle'),
+          t('settings.dailyReminderPermissionMessage')
+        );
+      }
+    } finally {
+      setIsSyncingReminder(false);
+    }
+  };
+
+  const handleReminderTimeChange = async (
+    event: DateTimePickerEvent,
+    selectedDate?: Date
+  ) => {
+    if (Platform.OS === 'android') {
+      setShowReminderTimePicker(false);
+    }
+    if (event.type === 'dismissed' || !selectedDate) return;
+
+    const nextReminder: NonNullable<AppSettings['dailyReminder']> = {
+      enabled: true,
+      hour: selectedDate.getHours(),
+      minute: selectedDate.getMinutes(),
+    };
+    updateSettings({ dailyReminder: nextReminder });
+    await syncDailyReminder(useStore.getState().settings);
   };
 
   const handleResetData = () => {
@@ -337,6 +402,75 @@ export const SettingsScreen: React.FC = () => {
           ))}
         </Card>
 
+        {/* Reminders Section */}
+        <Text style={styles.sectionTitle}>{t('settings.reminders')}</Text>
+        <Card style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={theme.textSecondary}
+              />
+              <Text style={styles.settingLabel}>{t('settings.dailyReminder')}</Text>
+            </View>
+            {isSyncingReminder ? (
+              <ActivityIndicator size="small" color={theme.textSecondary} />
+            ) : (
+              <Switch
+                value={reminderEnabled}
+                onValueChange={handleReminderToggle}
+                trackColor={{ false: theme.border, true: theme.primaryLight }}
+                thumbColor={reminderEnabled ? theme.primary : '#f4f3f4'}
+              />
+            )}
+          </View>
+          {reminderEnabled && (
+            <>
+              <View style={styles.divider} />
+              <Pressable
+                style={({ pressed }) => [styles.settingRow, pressed && styles.pressed]}
+                onPress={() => setShowReminderTimePicker((prev) => !prev)}
+              >
+                <View style={styles.settingLeft}>
+                  <Ionicons name="time-outline" size={22} color={theme.textSecondary} />
+                  <Text style={styles.settingLabel}>{t('settings.dailyReminderTime')}</Text>
+                </View>
+                <View style={styles.settingRight}>
+                  <Text style={styles.settingValue}>
+                    {formatReminderTime(reminderHour, reminderMinute)}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+                </View>
+              </Pressable>
+              {showReminderTimePicker && (
+                <View
+                  style={Platform.OS === 'ios' ? styles.iosPickerContainer : undefined}
+                >
+                  <DateTimePicker
+                    value={(() => {
+                      const date = new Date();
+                      date.setHours(reminderHour, reminderMinute, 0, 0);
+                      return date;
+                    })()}
+                    mode="time"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleReminderTimeChange}
+                  />
+                  {Platform.OS === 'ios' && (
+                    <Pressable
+                      style={styles.doneButton}
+                      onPress={() => setShowReminderTimePicker(false)}
+                    >
+                      <Text style={styles.doneButtonText}>{t('recurring.done')}</Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+        </Card>
+
         {/* Currency Section */}
         <Text style={styles.sectionTitle}>{t('settings.currency')}</Text>
         <Card style={styles.card}>
@@ -491,6 +625,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     height: 1,
     backgroundColor: theme.border,
     marginLeft: 50,
+  },
+  iosPickerContainer: {
+    backgroundColor: theme.card,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+  },
+  doneButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+  },
+  doneButtonText: {
+    color: theme.primary,
+    fontWeight: '600',
+    fontSize: 16,
   },
   languageOption: {
     flexDirection: 'row',

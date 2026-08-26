@@ -160,6 +160,33 @@ describe('migrate (persist v0/v1/v2 -> v3)', () => {
   });
 });
 
+describe('migrate (dailyReminder, non-destructive)', () => {
+  it('leaves dailyReminder undefined when it was never set', () => {
+    const migrated = migrate({ settings: { language: 'es' } });
+    expect(migrated.settings.dailyReminder).toBeUndefined();
+  });
+
+  it('carries forward a valid dailyReminder untouched', () => {
+    const legacyState = {
+      settings: { language: 'es', dailyReminder: { enabled: true, hour: 21, minute: 30 } },
+    };
+    const migrated = migrate(legacyState);
+    expect(migrated.settings.dailyReminder).toEqual({ enabled: true, hour: 21, minute: 30 });
+  });
+
+  it('discards a dailyReminder with an out-of-range or malformed shape', () => {
+    const migrated = migrate({
+      settings: { language: 'es', dailyReminder: { enabled: true, hour: 25, minute: 0 } },
+    });
+    expect(migrated.settings.dailyReminder).toBeUndefined();
+
+    const migratedMissingField = migrate({
+      settings: { language: 'es', dailyReminder: { enabled: true, hour: 21 } },
+    });
+    expect(migratedMissingField.settings.dailyReminder).toBeUndefined();
+  });
+});
+
 describe('addInvestmentValueEntry', () => {
   beforeEach(() => {
     useStore.getState().resetAllData();
