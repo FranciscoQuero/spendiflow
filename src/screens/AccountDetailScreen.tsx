@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,25 +11,49 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
+import {
+  getAccountBalance,
+  getAvailableBalance,
+  getProvisionBalance,
+} from '../hooks/useAccounts';
 import { colors } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 
 type RouteProps = RouteProp<RootStackParamList, 'AccountDetail'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const roleLabel = (role: string): string => {
+  switch (role) {
+    case 'personal':
+      return t('accounts.roleOptions.personal');
+    case 'business':
+      return t('accounts.roleOptions.business');
+    case 'shared':
+      return t('accounts.roleOptions.shared');
+    case 'savings':
+      return t('accounts.roleOptions.savings');
+    default:
+      return t('accounts.roleOptions.other');
+  }
+};
 
 export const AccountDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
 
   const bankAccounts = useStore((state) => state.bankAccounts);
+  const provisions = useStore((state) => state.provisions);
   const deleteBankAccount = useStore((state) => state.deleteBankAccount);
+  const updateBankAccount = useStore((state) => state.updateBankAccount);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
   const settings = useStore((state) => state.settings);
 
@@ -40,6 +64,18 @@ export const AccountDetailScreen: React.FC = () => {
   const account = bankAccounts.find((a) => a.id === id);
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
+  const accountProvisions = useMemo(
+    () => provisions.filter((p) => p.accountId === id && !p.archived),
+    [provisions, id]
+  );
+
+  const sortedHistory = useMemo(() => {
+    if (!account) return [];
+    return [...account.balanceHistory].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [account]);
+
   if (!account) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -49,18 +85,20 @@ export const AccountDetailScreen: React.FC = () => {
           </Pressable>
         </View>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Account not found</Text>
+          <Text style={styles.notFoundText}>{t('accounts.accountNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const currentBalance = account.balanceHistory[account.balanceHistory.length - 1]?.amount || 0;
+  const currentBalance = getAccountBalance(account);
+  const availableBalance = getAvailableBalance(account, provisions);
+  const hasFloorOrProvisions = (account.floor ?? 0) > 0 || accountProvisions.length > 0;
 
   const handleDelete = () => {
     Alert.alert(
       t('common.delete'),
-      `Delete "${account.name}"?`,
+      t('accounts.deleteAccountConfirm', { name: account.name }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -75,10 +113,33 @@ export const AccountDetailScreen: React.FC = () => {
     );
   };
 
+  const handleArchiveToggle = () => {
+    const willArchive = !account.archived;
+    Alert.alert(
+      willArchive ? t('accounts.archiveAccount') : t('accounts.unarchiveAccount'),
+      willArchive
+        ? t('accounts.archiveConfirm', { name: account.name })
+        : t('accounts.unarchiveConfirm', { name: account.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          onPress: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            updateBankAccount(id, { archived: willArchive });
+            if (willArchive) {
+              navigation.goBack();
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleAddBalance = () => {
     const parsedAmount = parseNumber(newBalance);
     if (parsedAmount <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
       return;
     }
 
@@ -102,19 +163,32 @@ export const AccountDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{account.name}</Text>
-        <Pressable onPress={handleDelete} style={styles.backButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
+        <Pressable
+          onPress={() => navigation.navigate('AddAccount', { accountId: id })}
+          style={styles.backButton}
+        >
+          <Ionicons name="create-outline" size={22} color={colors.text} />
         </Pressable>
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Current Balance */}
         <Card style={styles.balanceCard}>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>{roleLabel(account.role)}</Text>
+          </View>
           <Text style={styles.bankName}>{account.bankName}</Text>
           <Text style={styles.balanceLabel}>{t('accounts.balance')}</Text>
           <Text style={styles.balanceValue}>
             {formatCurrency(currentBalance, settings.currencySymbol, locale)}
           </Text>
+
+          {hasFloorOrProvisions && (
+            <Text style={styles.availableText}>
+              {t('accounts.available')}: {formatCurrency(availableBalance, settings.currencySymbol, locale)}
+            </Text>
+          )}
+
           <Pressable
             style={styles.updateButton}
             onPress={() => setShowAddModal(true)}
@@ -126,11 +200,98 @@ export const AccountDetailScreen: React.FC = () => {
           </Pressable>
         </Card>
 
-        {/* Balance History */}
-        <Text style={styles.sectionTitle}>Balance History</Text>
+        {/* Details */}
+        <Card style={styles.detailsCard}>
+          {account.floor !== undefined && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>{t('accounts.floor')}</Text>
+              <Text style={styles.detailValue}>
+                {formatCurrency(account.floor, settings.currencySymbol, locale)}
+              </Text>
+            </View>
+          )}
+          {account.ownershipShare < 1 && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>{t('accounts.ownershipShare')}</Text>
+              <Text style={styles.detailValue}>
+                {Math.round(account.ownershipShare * 100)}%
+              </Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>{t('accounts.available')}</Text>
+            <Text style={styles.detailValue}>
+              {formatCurrency(availableBalance, settings.currencySymbol, locale)}
+            </Text>
+          </View>
+        </Card>
+
+        {/* Provisions / Huchas */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('provisions.title')}</Text>
+          <Pressable
+            style={styles.sectionAddButton}
+            onPress={() => navigation.navigate('AddProvision', { accountId: id })}
+          >
+            <Ionicons name="add-circle" size={26} color={colors.primary} />
+          </Pressable>
+        </View>
         <Card>
-          {account.balanceHistory.length > 0 ? (
-            [...account.balanceHistory].reverse().map((entry, index) => (
+          {accountProvisions.length > 0 ? (
+            accountProvisions.map((provision, index) => {
+              const provisionBalance = getProvisionBalance(provision);
+              const progress =
+                provision.targetAmount && provision.targetAmount > 0
+                  ? Math.min((provisionBalance / provision.targetAmount) * 100, 100)
+                  : undefined;
+              return (
+                <View key={provision.id}>
+                  <Pressable
+                    style={styles.provisionRow}
+                    onPress={() =>
+                      navigation.navigate('ProvisionDetail', { provisionId: provision.id })
+                    }
+                  >
+                    <View
+                      style={[styles.provisionIcon, { backgroundColor: provision.color }]}
+                    >
+                      <Ionicons
+                        name={provision.icon as keyof typeof Ionicons.glyphMap}
+                        size={16}
+                        color="white"
+                      />
+                    </View>
+                    <View style={styles.provisionInfo}>
+                      <Text style={styles.provisionName}>{provision.name}</Text>
+                      {progress !== undefined && (
+                        <View style={styles.miniProgressBar}>
+                          <View
+                            style={[
+                              styles.miniProgressFill,
+                              { width: `${progress}%`, backgroundColor: provision.color },
+                            ]}
+                          />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.provisionBalance}>
+                      {formatCurrency(provisionBalance, settings.currencySymbol, locale)}
+                    </Text>
+                  </Pressable>
+                  {index < accountProvisions.length - 1 && <View style={styles.divider} />}
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>{t('provisions.noProvisions')}</Text>
+          )}
+        </Card>
+
+        {/* Balance History */}
+        <Text style={styles.sectionTitle}>{t('accounts.balanceHistory')}</Text>
+        <Card>
+          {sortedHistory.length > 0 ? (
+            sortedHistory.map((entry, index) => (
               <View key={entry.id}>
                 <View style={styles.historyRow}>
                   <View>
@@ -145,15 +306,35 @@ export const AccountDetailScreen: React.FC = () => {
                     {formatCurrency(entry.amount, settings.currencySymbol, locale)}
                   </Text>
                 </View>
-                {index < account.balanceHistory.length - 1 && (
+                {index < sortedHistory.length - 1 && (
                   <View style={styles.divider} />
                 )}
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No balance history</Text>
+            <Text style={styles.emptyText}>{t('accounts.noBalanceHistory')}</Text>
           )}
         </Card>
+
+        {/* Archive / Delete */}
+        <View style={styles.footerActions}>
+          <Pressable style={styles.footerButton} onPress={handleArchiveToggle}>
+            <Ionicons
+              name={account.archived ? 'archive' : 'archive-outline'}
+              size={18}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.footerButtonText}>
+              {account.archived ? t('accounts.unarchiveAccount') : t('accounts.archiveAccount')}
+            </Text>
+          </Pressable>
+          <Pressable style={styles.footerButton} onPress={handleDelete}>
+            <Ionicons name="trash-outline" size={18} color={colors.expense} />
+            <Text style={[styles.footerButtonText, { color: colors.expense }]}>
+              {t('common.delete')}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
       {/* Add Balance Modal */}
@@ -227,7 +408,20 @@ const styles = StyleSheet.create({
   },
   balanceCard: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  roleBadge: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  roleBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+    textTransform: 'uppercase',
   },
   bankName: {
     fontSize: 14,
@@ -245,6 +439,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginVertical: 8,
   },
+  availableText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
   updateButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,11 +458,74 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
+  detailsCard: {
+    marginBottom: 24,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
     marginBottom: 12,
+  },
+  sectionAddButton: {
+    padding: 2,
+  },
+  provisionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  provisionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  provisionInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  provisionName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  miniProgressBar: {
+    height: 4,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  miniProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  provisionBalance: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
   },
   historyRow: {
     flexDirection: 'row',
@@ -293,6 +555,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
     paddingVertical: 24,
+  },
+  footerActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  footerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  footerButtonText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   modalContainer: {
     flex: 1,

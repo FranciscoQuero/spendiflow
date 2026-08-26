@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
@@ -18,9 +19,12 @@ import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { parseNumber, getDateISO, formatCurrency } from '../utils/formatters';
 import { t } from '../locales/i18n';
+import { RootStackParamList } from '../navigation/types';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const AddBalanceScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const bankAccounts = useStore((state) => state.bankAccounts);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
   const settings = useStore((state) => state.settings);
@@ -34,13 +38,13 @@ export const AddBalanceScreen: React.FC = () => {
 
   const handleSave = () => {
     if (!selectedAccountId) {
-      Alert.alert(t('common.error'), 'Please select an account');
+      Alert.alert(t('common.error'), t('accounts.pleaseSelectAccount'));
       return;
     }
 
     const parsedAmount = parseNumber(amount);
     if (parsedAmount <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
       return;
     }
 
@@ -72,10 +76,7 @@ export const AddBalanceScreen: React.FC = () => {
           <Text style={styles.emptyText}>{t('accounts.noAccounts')}</Text>
           <Pressable
             style={styles.createButton}
-            onPress={() => {
-              navigation.goBack();
-              // Navigate to add account
-            }}
+            onPress={() => navigation.navigate('AddAccount')}
           >
             <Text style={styles.createButtonText}>{t('accounts.addAccount')}</Text>
           </Pressable>
@@ -101,7 +102,7 @@ export const AddBalanceScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
       >
         {/* Account Selection */}
-        <Text style={styles.label}>Select Account</Text>
+        <Text style={styles.label}>{t('accounts.selectAccount')}</Text>
         {bankAccounts.map((account) => {
           const lastBalance = account.balanceHistory[account.balanceHistory.length - 1];
           return (
@@ -134,7 +135,7 @@ export const AddBalanceScreen: React.FC = () => {
         })}
 
         {/* Amount Input */}
-        <Text style={[styles.label, { marginTop: 24 }]}>New Balance</Text>
+        <Text style={[styles.label, { marginTop: 24 }]}>{t('accounts.newBalance')}</Text>
         <AmountInput value={amount} onChangeText={setAmount} type="income" />
 
         {/* Note */}

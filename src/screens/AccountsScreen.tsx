@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,27 +12,58 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
+import {
+  getAccountBalance,
+  getAvailableBalance,
+  getMyShareBalance,
+  getProvisionBalance,
+} from '../hooks/useAccounts';
 import { colors } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
+import { BankAccount, Debt, Provision } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const roleLabel = (role: string): string => {
+  switch (role) {
+    case 'personal':
+      return t('accounts.roleOptions.personal');
+    case 'business':
+      return t('accounts.roleOptions.business');
+    case 'shared':
+      return t('accounts.roleOptions.shared');
+    case 'savings':
+      return t('accounts.roleOptions.savings');
+    default:
+      return t('accounts.roleOptions.other');
+  }
+};
 
 export const AccountsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const bankAccounts = useStore((state) => state.bankAccounts);
+  const provisions = useStore((state) => state.provisions);
   const investments = useStore((state) => state.investments);
   const debts = useStore((state) => state.debts);
   const settings = useStore((state) => state.settings);
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
+  const [showArchived, setShowArchived] = useState(false);
+
+  const activeAccounts = useMemo(
+    () => bankAccounts.filter((a) => !a.archived),
+    [bankAccounts]
+  );
+  const archivedAccounts = useMemo(
+    () => bankAccounts.filter((a) => a.archived),
+    [bankAccounts]
+  );
+
   const totalBankBalance = useMemo(() => {
-    return bankAccounts.reduce((sum, account) => {
-      const lastEntry = account.balanceHistory[account.balanceHistory.length - 1];
-      return sum + (lastEntry?.amount || 0);
-    }, 0);
-  }, [bankAccounts]);
+    return activeAccounts.reduce((sum, account) => sum + getMyShareBalance(account), 0);
+  }, [activeAccounts]);
 
   const totalInvested = useMemo(() => {
     return investments.reduce((sum, inv) => {
@@ -40,15 +71,39 @@ export const AccountsScreen: React.FC = () => {
     }, 0);
   }, [investments]);
 
-  const totalDebt = useMemo(() => {
-    return debts.reduce((sum, debt) => {
-      const paid = debt.payments.reduce((s, p) => s + p.amount, 0);
-      return sum + (debt.totalAmount - paid);
-    }, 0);
-  }, [debts]);
+  const iOweDebts = useMemo(() => debts.filter((d) => d.direction === 'iOwe'), [debts]);
+  const owedToMeDebts = useMemo(
+    () => debts.filter((d) => d.direction === 'owedToMe'),
+    [debts]
+  );
 
-  const renderBankAccount = (account: typeof bankAccounts[0]) => {
-    const lastEntry = account.balanceHistory[account.balanceHistory.length - 1];
+  const totalDebt = useMemo(() => {
+    return iOweDebts.reduce((sum, debt) => {
+      const paid = debt.payments.reduce((s, p) => s + p.amount, 0);
+      return sum + Math.max(debt.totalAmount - paid, 0);
+    }, 0);
+  }, [iOweDebts]);
+
+  const totalOwedToMe = useMemo(() => {
+    return owedToMeDebts.reduce((sum, debt) => {
+      const paid = debt.payments.reduce((s, p) => s + p.amount, 0);
+      return sum + Math.max(debt.totalAmount - paid, 0);
+    }, 0);
+  }, [owedToMeDebts]);
+
+  const provisionsByAccount = (accountId: string): Provision[] =>
+    provisions.filter((p) => p.accountId === accountId && !p.archived);
+
+  const renderBankAccount = (account: BankAccount) => {
+    const balance = getAccountBalance(account);
+    const available = getAvailableBalance(account, provisions);
+    const myShare = getMyShareBalance(account);
+    const accountProvisions = provisionsByAccount(account.id);
+    const lastEntry = [...account.balanceHistory].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    )[0];
+    const hasFloorOrProvisions = (account.floor ?? 0) > 0 || accountProvisions.length > 0;
+
     return (
       <Card
         key={account.id}
@@ -64,17 +119,61 @@ export const AccountsScreen: React.FC = () => {
             <Text style={styles.itemName}>{account.name}</Text>
             <Text style={styles.itemSubtitle}>{account.bankName}</Text>
           </View>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>{roleLabel(account.role)}</Text>
+          </View>
         </View>
         <View style={styles.itemFooter}>
           <Text style={styles.balanceLabel}>{t('accounts.balance')}</Text>
           <Text style={styles.balanceValue}>
-            {formatCurrency(lastEntry?.amount || 0, settings.currencySymbol, locale)}
+            {formatCurrency(balance, settings.currencySymbol, locale)}
           </Text>
+          {hasFloorOrProvisions && (
+            <Text style={styles.secondaryText}>
+              {t('accounts.available')}: {formatCurrency(available, settings.currencySymbol, locale)}
+            </Text>
+          )}
+          {account.ownershipShare < 1 && (
+            <Text style={styles.secondaryText}>
+              {t('accounts.myShare')}: {formatCurrency(myShare, settings.currencySymbol, locale)}
+            </Text>
+          )}
           {lastEntry && (
             <Text style={styles.lastUpdate}>
               {t('accounts.lastUpdate')}: {formatDate(lastEntry.date, locale)}
             </Text>
           )}
+        </View>
+
+        {/* Provision chips */}
+        <View style={styles.provisionChipRow}>
+          {accountProvisions.map((provision) => (
+            <Pressable
+              key={provision.id}
+              style={[styles.provisionChip, { borderColor: provision.color }]}
+              onPress={() =>
+                navigation.navigate('ProvisionDetail', { provisionId: provision.id })
+              }
+            >
+              <Ionicons
+                name={provision.icon as keyof typeof Ionicons.glyphMap}
+                size={12}
+                color={provision.color}
+              />
+              <Text style={styles.provisionChipText} numberOfLines={1}>
+                {provision.name}
+              </Text>
+              <Text style={[styles.provisionChipBalance, { color: provision.color }]}>
+                {formatCurrency(getProvisionBalance(provision), settings.currencySymbol, locale)}
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            style={styles.provisionAddChip}
+            onPress={() => navigation.navigate('AddProvision', { accountId: account.id })}
+          >
+            <Ionicons name="add" size={14} color={colors.primary} />
+          </Pressable>
         </View>
       </Card>
     );
@@ -113,10 +212,11 @@ export const AccountsScreen: React.FC = () => {
     );
   };
 
-  const renderDebt = (debt: typeof debts[0]) => {
+  const renderDebt = (debt: Debt, variant: 'iOwe' | 'owedToMe') => {
     const paid = debt.payments.reduce((s, p) => s + p.amount, 0);
-    const remaining = debt.totalAmount - paid;
-    const progress = (paid / debt.totalAmount) * 100;
+    const remaining = Math.max(debt.totalAmount - paid, 0);
+    const progress = debt.totalAmount > 0 ? (paid / debt.totalAmount) * 100 : 0;
+    const accentColor = variant === 'iOwe' ? colors.expense : colors.income;
 
     return (
       <Card
@@ -126,7 +226,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('DebtDetail', { id: debt.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.expense }]}>
+          <View style={[styles.iconCircle, { backgroundColor: accentColor }]}>
             <Ionicons name="card" size={20} color="white" />
           </View>
           <View style={styles.itemInfo}>
@@ -138,14 +238,26 @@ export const AccountsScreen: React.FC = () => {
         </View>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progress}%`, backgroundColor: accentColor },
+              ]}
+            />
           </View>
           <View style={styles.progressLabels}>
             <Text style={styles.progressText}>
               {t('accounts.paid')}: {formatCurrency(paid, settings.currencySymbol, locale)}
             </Text>
-            <Text style={styles.progressText}>
-              {t('accounts.remaining')}: {formatCurrency(remaining, settings.currencySymbol, locale)}
+            <Text
+              style={[
+                styles.progressText,
+                variant === 'owedToMe' && { color: colors.income, fontWeight: '600' },
+              ]}
+            >
+              {variant === 'iOwe' ? t('accounts.remaining') : t('debts.pendingToCollect')}:{' '}
+              {variant === 'owedToMe' ? '+' : ''}
+              {formatCurrency(remaining, settings.currencySymbol, locale)}
             </Text>
           </View>
         </View>
@@ -196,22 +308,32 @@ export const AccountsScreen: React.FC = () => {
           </Card>
         </View>
 
-        {totalDebt > 0 && (
-          <Card style={styles.debtSummaryCard}>
-            <Text style={styles.summaryLabel}>{t('accounts.totalDebt')}</Text>
-            <Text style={[styles.summaryValue, { color: colors.expense }]}>
-              -{formatCurrency(totalDebt, settings.currencySymbol, locale)}
-            </Text>
-          </Card>
-        )}
+        <View style={styles.summaryRow}>
+          {totalDebt > 0 && (
+            <Card style={[styles.summaryCard, !(totalOwedToMe > 0) && styles.fullWidthCard]}>
+              <Text style={styles.summaryLabel}>{t('accounts.totalDebt')}</Text>
+              <Text style={[styles.summaryValue, { color: colors.expense }]}>
+                -{formatCurrency(totalDebt, settings.currencySymbol, locale)}
+              </Text>
+            </Card>
+          )}
+          {totalOwedToMe > 0 && (
+            <Card style={[styles.summaryCard, !(totalDebt > 0) && styles.fullWidthCard]}>
+              <Text style={styles.summaryLabel}>{t('accounts.owedToMe')}</Text>
+              <Text style={[styles.summaryValue, { color: colors.income }]}>
+                +{formatCurrency(totalOwedToMe, settings.currencySymbol, locale)}
+              </Text>
+            </Card>
+          )}
+        </View>
 
         {/* Bank Accounts Section */}
         <SectionHeader
           title={t('accounts.bankAccounts')}
           onAdd={() => navigation.navigate('AddAccount')}
         />
-        {bankAccounts.length > 0 ? (
-          bankAccounts.map(renderBankAccount)
+        {activeAccounts.length > 0 ? (
+          activeAccounts.map(renderBankAccount)
         ) : (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyText}>{t('accounts.noAccounts')}</Text>
@@ -236,12 +358,39 @@ export const AccountsScreen: React.FC = () => {
           title={t('accounts.debts')}
           onAdd={() => navigation.navigate('AddDebt')}
         />
-        {debts.length > 0 ? (
-          debts.map(renderDebt)
+        {iOweDebts.length > 0 ? (
+          iOweDebts.map((debt) => renderDebt(debt, 'iOwe'))
         ) : (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyText}>{t('accounts.noDebts')}</Text>
           </Card>
+        )}
+
+        {owedToMeDebts.length > 0 && (
+          <>
+            <Text style={styles.subsectionTitle}>{t('accounts.owedToMe')}</Text>
+            {owedToMeDebts.map((debt) => renderDebt(debt, 'owedToMe'))}
+          </>
+        )}
+
+        {/* Archived Accounts */}
+        {archivedAccounts.length > 0 && (
+          <View style={styles.archivedSection}>
+            <Pressable
+              style={styles.archivedHeader}
+              onPress={() => setShowArchived((prev) => !prev)}
+            >
+              <Text style={styles.sectionTitle}>
+                {t('accounts.archivedSection')} ({archivedAccounts.length})
+              </Text>
+              <Ionicons
+                name={showArchived ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </Pressable>
+            {showArchived && archivedAccounts.map(renderBankAccount)}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -277,9 +426,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  debtSummaryCard: {
-    alignItems: 'center',
-    marginBottom: 24,
+  fullWidthCard: {
+    flex: 1,
   },
   summaryLabel: {
     fontSize: 12,
@@ -302,6 +450,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: colors.text,
+  },
+  subsectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.income,
+    marginTop: 4,
+    marginBottom: 8,
   },
   addButton: {
     padding: 4,
@@ -335,6 +490,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  roleBadge: {
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  roleBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
   itemFooter: {},
   balanceLabel: {
     fontSize: 12,
@@ -347,10 +514,50 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: 2,
   },
+  secondaryText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
   lastUpdate: {
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  provisionChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 12,
+  },
+  provisionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    maxWidth: 160,
+  },
+  provisionChipText: {
+    fontSize: 11,
+    color: colors.text,
+    fontWeight: '500',
+    maxWidth: 70,
+  },
+  provisionChipBalance: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  provisionAddChip: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   progressContainer: {
     marginTop: 4,
@@ -363,7 +570,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.income,
     borderRadius: 4,
   },
   progressLabels: {
@@ -382,5 +588,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
     paddingVertical: 16,
+  },
+  archivedSection: {
+    marginTop: 16,
+  },
+  archivedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingVertical: 4,
   },
 });

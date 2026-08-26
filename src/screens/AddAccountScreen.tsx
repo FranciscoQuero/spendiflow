@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
@@ -17,36 +17,109 @@ import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
+import { RootStackParamList } from '../navigation/types';
+import { AccountRole } from '../types';
+
+type RouteProps = RouteProp<RootStackParamList, 'AddAccount'>;
+
+const ROLE_OPTIONS: AccountRole[] = ['personal', 'business', 'shared', 'savings', 'other'];
+
+const roleLabel = (role: AccountRole): string => {
+  switch (role) {
+    case 'personal':
+      return t('accounts.roleOptions.personal');
+    case 'business':
+      return t('accounts.roleOptions.business');
+    case 'shared':
+      return t('accounts.roleOptions.shared');
+    case 'savings':
+      return t('accounts.roleOptions.savings');
+    case 'other':
+    default:
+      return t('accounts.roleOptions.other');
+  }
+};
 
 export const AddAccountScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute<RouteProps>();
+  const accountId = route.params?.accountId;
+
+  const bankAccounts = useStore((state) => state.bankAccounts);
   const addBankAccount = useStore((state) => state.addBankAccount);
+  const updateBankAccount = useStore((state) => state.updateBankAccount);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
 
-  const [name, setName] = useState('');
-  const [bankName, setBankName] = useState('');
+  const existingAccount = accountId
+    ? bankAccounts.find((a) => a.id === accountId)
+    : undefined;
+  const isEditMode = !!existingAccount;
+
+  const [name, setName] = useState(existingAccount?.name ?? '');
+  const [bankName, setBankName] = useState(existingAccount?.bankName ?? '');
   const [initialBalance, setInitialBalance] = useState('');
+  const [role, setRole] = useState<AccountRole>(existingAccount?.role ?? 'personal');
+  const [floor, setFloor] = useState(
+    existingAccount?.floor !== undefined ? String(existingAccount.floor) : ''
+  );
+  const [ownershipPercent, setOwnershipPercent] = useState(
+    existingAccount ? String(Math.round(existingAccount.ownershipShare * 100)) : '100'
+  );
+  // Solo auto-sugerimos el 50% en cuentas nuevas mientras el usuario no lo haya tocado.
+  const [ownershipTouched, setOwnershipTouched] = useState(isEditMode);
+
+  const handleSelectRole = (nextRole: AccountRole) => {
+    Haptics.selectionAsync();
+    setRole(nextRole);
+    if (!ownershipTouched) {
+      setOwnershipPercent(nextRole === 'shared' ? '50' : '100');
+    }
+  };
+
+  const handleChangeOwnership = (value: string) => {
+    setOwnershipTouched(true);
+    setOwnershipPercent(value.replace(/[^0-9]/g, ''));
+  };
 
   const handleSave = () => {
     try {
       if (!name.trim()) {
-        Alert.alert(t('common.error'), 'Please enter an account name');
+        Alert.alert(t('common.error'), t('accounts.pleaseEnterAccountName'));
         return;
       }
 
       if (!bankName.trim()) {
-        Alert.alert(t('common.error'), 'Please enter a bank name');
+        Alert.alert(t('common.error'), t('accounts.pleaseEnterBankName'));
         return;
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Create the account
+      const parsedFloor = floor.trim() ? parseNumber(floor) : undefined;
+      const parsedOwnership = Math.min(
+        100,
+        Math.max(0, ownershipPercent.trim() ? parseInt(ownershipPercent, 10) : 100)
+      );
+      const ownershipShare = parsedOwnership / 100;
+
+      if (isEditMode && accountId) {
+        updateBankAccount(accountId, {
+          name: name.trim(),
+          bankName: bankName.trim(),
+          role,
+          floor: parsedFloor,
+          ownershipShare,
+        });
+        navigation.goBack();
+        return;
+      }
+
       const newAccountId = addBankAccount({
         name: name.trim(),
         bankName: bankName.trim(),
-        role: 'personal',
-        ownershipShare: 1,
+        role,
+        floor: parsedFloor,
+        ownershipShare,
         archived: false,
       });
 
@@ -61,8 +134,8 @@ export const AddAccountScreen: React.FC = () => {
 
       navigation.goBack();
     } catch (error) {
-      console.error('Error adding account:', error);
-      Alert.alert(t('common.error'), 'Error creating account: ' + String(error));
+      console.error('Error saving account:', error);
+      Alert.alert(t('common.error'), String(error));
     }
   };
 
@@ -75,7 +148,9 @@ export const AddAccountScreen: React.FC = () => {
         <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
           <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
-        <Text style={styles.title}>{t('accounts.addAccount')}</Text>
+        <Text style={styles.title}>
+          {isEditMode ? t('accounts.editAccount') : t('accounts.addAccount')}
+        </Text>
         <View style={styles.closeButton} />
       </View>
 
@@ -85,29 +160,78 @@ export const AddAccountScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
       >
         {/* Account Name */}
-        <Text style={styles.label}>Account Name</Text>
+        <Text style={styles.label}>{t('accounts.accountName')}</Text>
         <TextInput
           style={styles.textInput}
           value={name}
           onChangeText={setName}
-          placeholder="e.g., Main Checking"
+          placeholder={t('accounts.accountNamePlaceholder')}
           placeholderTextColor={colors.textSecondary}
-          autoFocus
+          autoFocus={!isEditMode}
         />
 
         {/* Bank Name */}
-        <Text style={styles.label}>Bank Name</Text>
+        <Text style={styles.label}>{t('accounts.bankName')}</Text>
         <TextInput
           style={styles.textInput}
           value={bankName}
           onChangeText={setBankName}
-          placeholder="e.g., BBVA, Santander"
+          placeholder={t('accounts.bankNamePlaceholder')}
           placeholderTextColor={colors.textSecondary}
         />
 
-        {/* Initial Balance */}
-        <Text style={styles.label}>Initial Balance (optional)</Text>
-        <AmountInput value={initialBalance} onChangeText={setInitialBalance} type="income" />
+        {/* Role */}
+        <Text style={styles.label}>{t('accounts.role')}</Text>
+        <View style={styles.chipRow}>
+          {ROLE_OPTIONS.map((option) => (
+            <Pressable
+              key={option}
+              style={[styles.chip, role === option && styles.chipSelected]}
+              onPress={() => handleSelectRole(option)}
+            >
+              <Text
+                style={[styles.chipText, role === option && styles.chipTextSelected]}
+              >
+                {roleLabel(option)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Floor */}
+        <Text style={styles.label}>{t('accounts.floor')}</Text>
+        <Text style={styles.hint}>{t('accounts.floorHint')}</Text>
+        <TextInput
+          style={styles.textInput}
+          value={floor}
+          onChangeText={setFloor}
+          placeholder={t('accounts.floorPlaceholder')}
+          placeholderTextColor={colors.textSecondary}
+          keyboardType="decimal-pad"
+        />
+
+        {/* Ownership Share */}
+        <Text style={styles.label}>{t('accounts.ownershipShare')}</Text>
+        <View style={styles.percentRow}>
+          <TextInput
+            style={[styles.textInput, styles.percentInput]}
+            value={ownershipPercent}
+            onChangeText={handleChangeOwnership}
+            placeholder={t('accounts.ownershipSharePlaceholder')}
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="number-pad"
+            maxLength={3}
+          />
+          <Text style={styles.percentSign}>%</Text>
+        </View>
+
+        {/* Initial Balance (only when creating) */}
+        {!isEditMode && (
+          <>
+            <Text style={styles.label}>{t('accounts.initialBalance')}</Text>
+            <AmountInput value={initialBalance} onChangeText={setInitialBalance} type="income" />
+          </>
+        )}
       </ScrollView>
 
       {/* Save Button */}
@@ -164,6 +288,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  hint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 8,
+    marginTop: -4,
+  },
   textInput: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -172,6 +302,44 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  chipTextSelected: {
+    color: 'white',
+  },
+  percentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  percentInput: {
+    flex: 1,
+  },
+  percentSign: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   footer: {
     padding: 20,

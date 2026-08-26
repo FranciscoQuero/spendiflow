@@ -116,9 +116,10 @@ export const InvestmentDetailScreen: React.FC = () => {
     setShowValueModal(false);
   };
 
-  const returnPercent = investment.currentValue
-    ? ((investment.currentValue - totalContributed) / totalContributed) * 100
-    : 0;
+  const returnPercent =
+    investment.currentValue && totalContributed > 0
+      ? ((investment.currentValue - totalContributed) / totalContributed) * 100
+      : 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
