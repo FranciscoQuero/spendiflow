@@ -13,6 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -158,96 +159,98 @@ export const AddAccountScreen: React.FC = () => {
         <View style={styles.closeButton} />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Account Name */}
-        <Text style={styles.label}>{t('accounts.accountName')}</Text>
-        <TextInput
-          style={styles.textInput}
-          value={name}
-          onChangeText={setName}
-          placeholder={t('accounts.accountNamePlaceholder')}
-          placeholderTextColor={theme.textSecondary}
-          autoFocus={!isEditMode}
-        />
-
-        {/* Bank Name */}
-        <Text style={styles.label}>{t('accounts.bankName')}</Text>
-        <TextInput
-          style={styles.textInput}
-          value={bankName}
-          onChangeText={setBankName}
-          placeholder={t('accounts.bankNamePlaceholder')}
-          placeholderTextColor={theme.textSecondary}
-        />
-
-        {/* Role */}
-        <Text style={styles.label}>{t('accounts.role')}</Text>
-        <View style={styles.chipRow}>
-          {ROLE_OPTIONS.map((option) => (
-            <Pressable
-              key={option}
-              style={[styles.chip, role === option && styles.chipSelected]}
-              onPress={() => handleSelectRole(option)}
-            >
-              <Text
-                style={[styles.chipText, role === option && styles.chipTextSelected]}
-              >
-                {roleLabel(option)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Floor */}
-        <Text style={styles.label}>{t('accounts.floor')}</Text>
-        <Text style={styles.hint}>{t('accounts.floorHint')}</Text>
-        <TextInput
-          style={styles.textInput}
-          value={floor}
-          onChangeText={setFloor}
-          placeholder={t('accounts.floorPlaceholder')}
-          placeholderTextColor={theme.textSecondary}
-          keyboardType="decimal-pad"
-        />
-
-        {/* Ownership Share */}
-        <Text style={styles.label}>{t('accounts.ownershipShare')}</Text>
-        <View style={styles.percentRow}>
-          <TextInput
-            style={[styles.textInput, styles.percentInput]}
-            value={ownershipPercent}
-            onChangeText={handleChangeOwnership}
-            placeholder={t('accounts.ownershipSharePlaceholder')}
-            placeholderTextColor={theme.textSecondary}
-            keyboardType="number-pad"
-            maxLength={3}
-          />
-          <Text style={styles.percentSign}>%</Text>
-        </View>
-
-        {/* Initial Balance (only when creating) */}
-        {!isEditMode && (
-          <>
-            <Text style={styles.label}>{t('accounts.initialBalance')}</Text>
-            <AmountInput value={initialBalance} onChangeText={setInitialBalance} type="income" />
-          </>
-        )}
-      </ScrollView>
-
-      {/* Save Button */}
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.saveButton, !canSave && styles.disabledButton]}
-          onPress={handleSave}
-          disabled={!canSave}
+      <FormScrollView>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.saveButtonText}>{t('common.save')}</Text>
-        </Pressable>
-      </View>
+          {/* Account Name */}
+          <Text style={styles.label}>{t('accounts.accountName')}</Text>
+          <TextInput
+            style={styles.textInput}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('accounts.accountNamePlaceholder')}
+            placeholderTextColor={theme.textSecondary}
+            autoFocus={!isEditMode}
+          />
+
+          {/* Bank Name */}
+          <Text style={styles.label}>{t('accounts.bankName')}</Text>
+          <TextInput
+            style={styles.textInput}
+            value={bankName}
+            onChangeText={setBankName}
+            placeholder={t('accounts.bankNamePlaceholder')}
+            placeholderTextColor={theme.textSecondary}
+          />
+
+          {/* Role */}
+          <Text style={styles.label}>{t('accounts.role')}</Text>
+          <View style={styles.chipRow}>
+            {ROLE_OPTIONS.map((option) => (
+              <Pressable
+                key={option}
+                style={[styles.chip, role === option && styles.chipSelected]}
+                onPress={() => handleSelectRole(option)}
+              >
+                <Text
+                  style={[styles.chipText, role === option && styles.chipTextSelected]}
+                >
+                  {roleLabel(option)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Floor */}
+          <Text style={styles.label}>{t('accounts.floor')}</Text>
+          <Text style={styles.hint}>{t('accounts.floorHint')}</Text>
+          <TextInput
+            style={styles.textInput}
+            value={floor}
+            onChangeText={setFloor}
+            placeholder={t('accounts.floorPlaceholder')}
+            placeholderTextColor={theme.textSecondary}
+            keyboardType="decimal-pad"
+          />
+
+          {/* Ownership Share */}
+          <Text style={styles.label}>{t('accounts.ownershipShare')}</Text>
+          <View style={styles.percentRow}>
+            <TextInput
+              style={[styles.textInput, styles.percentInput]}
+              value={ownershipPercent}
+              onChangeText={handleChangeOwnership}
+              placeholder={t('accounts.ownershipSharePlaceholder')}
+              placeholderTextColor={theme.textSecondary}
+              keyboardType="number-pad"
+              maxLength={3}
+            />
+            <Text style={styles.percentSign}>%</Text>
+          </View>
+
+          {/* Initial Balance (only when creating) */}
+          {!isEditMode && (
+            <>
+              <Text style={styles.label}>{t('accounts.initialBalance')}</Text>
+              <AmountInput value={initialBalance} onChangeText={setInitialBalance} type="income" />
+            </>
+          )}
+        </ScrollView>
+
+        {/* Save Button */}
+        <View style={styles.footer}>
+          <Pressable
+            style={[styles.saveButton, !canSave && styles.disabledButton]}
+            onPress={handleSave}
+            disabled={!canSave}
+          >
+            <Text style={styles.saveButtonText}>{t('common.save')}</Text>
+          </Pressable>
+        </View>
+      </FormScrollView>
     </SafeAreaView>
   );
 };
@@ -282,6 +285,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   label: {
     fontSize: 14,

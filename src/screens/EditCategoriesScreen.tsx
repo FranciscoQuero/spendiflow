@@ -14,6 +14,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -205,53 +206,58 @@ export const EditCategoriesScreen: React.FC = () => {
         presentationStyle="pageSheet"
       >
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable
-              onPress={() => {
-                setShowAddModal(false);
-                setAddingSubcategoryTo(null);
-                setNewCategoryName('');
-                setNewCategoryNameEn('');
-              }}
-            >
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>
-              {addingSubcategoryTo
-                ? t('settings.addSubcategory')
-                : t('settings.addCategory')}
-            </Text>
-            <Pressable
-              onPress={() =>
-                addingSubcategoryTo
-                  ? handleAddSubcategory(addingSubcategoryTo)
-                  : handleAddCategory()
-              }
-            >
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable
+                onPress={() => {
+                  setShowAddModal(false);
+                  setAddingSubcategoryTo(null);
+                  setNewCategoryName('');
+                  setNewCategoryNameEn('');
+                }}
+              >
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>
+                {addingSubcategoryTo
+                  ? t('settings.addSubcategory')
+                  : t('settings.addCategory')}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  addingSubcategoryTo
+                    ? handleAddSubcategory(addingSubcategoryTo)
+                    : handleAddCategory()
+                }
+              >
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
 
-          <View style={styles.modalContent}>
-            <Text style={styles.inputLabel}>{t('settings.nameSpanish')}</Text>
-            <TextInput
-              style={styles.input}
-              value={newCategoryName}
-              onChangeText={setNewCategoryName}
-              placeholder={t('settings.categoryNamePlaceholderEs')}
-              placeholderTextColor={theme.textSecondary}
-              autoFocus
-            />
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.inputLabel}>{t('settings.nameSpanish')}</Text>
+              <TextInput
+                style={styles.input}
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+                placeholder={t('settings.categoryNamePlaceholderEs')}
+                placeholderTextColor={theme.textSecondary}
+                autoFocus
+              />
 
-            <Text style={styles.inputLabel}>{t('settings.nameEnglish')}</Text>
-            <TextInput
-              style={styles.input}
-              value={newCategoryNameEn}
-              onChangeText={setNewCategoryNameEn}
-              placeholder={t('settings.categoryNamePlaceholderEn')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+              <Text style={styles.inputLabel}>{t('settings.nameEnglish')}</Text>
+              <TextInput
+                style={styles.input}
+                value={newCategoryNameEn}
+                onChangeText={setNewCategoryNameEn}
+                placeholder={t('settings.categoryNamePlaceholderEn')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -379,6 +385,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   modalContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   inputLabel: {
     fontSize: 14,

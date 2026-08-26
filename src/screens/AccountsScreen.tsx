@@ -21,6 +21,7 @@ import {
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { investmentTypeI18nKey } from '../utils/investmentTypes';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 import { BankAccount, Debt, Provision } from '../types';
@@ -198,7 +199,7 @@ export const AccountsScreen: React.FC = () => {
           </View>
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{investment.name}</Text>
-            <Text style={styles.itemSubtitle}>{investment.type}</Text>
+            <Text style={styles.itemSubtitle}>{t(investmentTypeI18nKey(investment.type))}</Text>
           </View>
         </View>
         <View style={styles.itemFooter}>
