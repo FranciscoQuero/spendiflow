@@ -222,6 +222,10 @@ export default {
     language: 'Language',
     spanish: 'Español',
     english: 'English',
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSystem: 'System',
     currency: 'Currency',
     categories: 'Categories',
     editCategories: 'Edit categories',
@@ -277,6 +281,13 @@ export default {
   // Transfers
   transfers: {
     title: 'Transfers',
+  },
+
+  // Error boundary (unexpected error screen)
+  errorBoundary: {
+    title: 'Something went wrong',
+    message: 'An unexpected error occurred. You can try again.',
+    retry: 'Retry',
   },
 
   // Provisions (savings pots)

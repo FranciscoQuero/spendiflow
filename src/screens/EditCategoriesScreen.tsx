@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 import { Category } from '../types';
@@ -23,6 +24,9 @@ import { Category } from '../types';
 type RouteProps = RouteProp<RootStackParamList, 'EditCategories'>;
 
 export const EditCategoriesScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const { type } = route.params;
@@ -71,7 +75,7 @@ export const EditCategoriesScreen: React.FC = () => {
     addCategory({
       name: newCategoryName.trim(),
       nameEn: newCategoryNameEn.trim() || newCategoryName.trim(),
-      color: isExpense ? colors.expense : colors.income,
+      color: isExpense ? theme.expense : theme.income,
       icon: 'ellipse',
       type,
     });
@@ -107,7 +111,7 @@ export const EditCategoriesScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>
           {isExpense
@@ -115,7 +119,7 @@ export const EditCategoriesScreen: React.FC = () => {
             : t('settings.incomeCategories')}
         </Text>
         <Pressable onPress={() => setShowAddModal(true)} style={styles.backButton}>
-          <Ionicons name="add" size={28} color={colors.primary} />
+          <Ionicons name="add" size={28} color={theme.primary} />
         </Pressable>
       </View>
 
@@ -144,7 +148,7 @@ export const EditCategoriesScreen: React.FC = () => {
                   onPress={() => handleDeleteCategory(category)}
                   hitSlop={8}
                 >
-                  <Ionicons name="trash-outline" size={20} color={colors.expense} />
+                  <Ionicons name="trash-outline" size={20} color={theme.expense} />
                 </Pressable>
                 <Ionicons
                   name={
@@ -153,7 +157,7 @@ export const EditCategoriesScreen: React.FC = () => {
                       : 'chevron-down'
                   }
                   size={20}
-                  color={colors.textSecondary}
+                  color={theme.textSecondary}
                 />
               </View>
             </Pressable>
@@ -172,7 +176,7 @@ export const EditCategoriesScreen: React.FC = () => {
                       <Ionicons
                         name="close-circle"
                         size={20}
-                        color={colors.textSecondary}
+                        color={theme.textSecondary}
                       />
                     </Pressable>
                   </View>
@@ -181,7 +185,7 @@ export const EditCategoriesScreen: React.FC = () => {
                   style={styles.addSubcategoryButton}
                   onPress={() => setAddingSubcategoryTo(category.id)}
                 >
-                  <Ionicons name="add" size={20} color={colors.primary} />
+                  <Ionicons name="add" size={20} color={theme.primary} />
                   <Text style={styles.addSubcategoryText}>
                     {t('settings.addSubcategory')}
                   </Text>
@@ -233,7 +237,7 @@ export const EditCategoriesScreen: React.FC = () => {
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="e.g., Transporte"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
               autoFocus
             />
 
@@ -243,7 +247,7 @@ export const EditCategoriesScreen: React.FC = () => {
               value={newCategoryNameEn}
               onChangeText={setNewCategoryNameEn}
               placeholder="e.g., Transportation"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -252,10 +256,10 @@ export const EditCategoriesScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -275,7 +279,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -307,7 +311,7 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   categoryRight: {
     flexDirection: 'row',
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
   },
   subcategoryList: {
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
     paddingVertical: 8,
   },
   subcategoryRow: {
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
   },
   subcategoryName: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   addSubcategoryButton: {
     flexDirection: 'row',
@@ -341,12 +345,12 @@ const styles = StyleSheet.create({
   },
   addSubcategoryText: {
     fontSize: 14,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '500',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -355,20 +359,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -377,18 +381,18 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
 });

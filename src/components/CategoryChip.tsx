@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, StyleSheet, Pressable } from 'react-native';
 import { Category } from '../types';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { useStore } from '../store/useStore';
 
 interface CategoryChipProps {
@@ -15,6 +16,9 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
   selected = false,
   onPress,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const settings = useStore((state) => state.settings);
   const name = settings.language === 'es' ? category.name : category.nameEn;
 
@@ -40,14 +44,14 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },

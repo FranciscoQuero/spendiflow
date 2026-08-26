@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO, formatCurrency } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -24,6 +25,9 @@ import { RootStackParamList } from '../navigation/types';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const AddBalanceScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const bankAccounts = useStore((state) => state.bankAccounts);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
@@ -66,13 +70,13 @@ export const AddBalanceScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={colors.text} />
+            <Ionicons name="close" size={28} color={theme.text} />
           </Pressable>
           <Text style={styles.title}>{t('accounts.updateBalance')}</Text>
           <View style={styles.closeButton} />
         </View>
         <View style={styles.emptyContainer}>
-          <Ionicons name="wallet-outline" size={64} color={colors.textSecondary} />
+          <Ionicons name="wallet-outline" size={64} color={theme.textSecondary} />
           <Text style={styles.emptyText}>{t('accounts.noAccounts')}</Text>
           <Pressable
             style={styles.createButton}
@@ -90,7 +94,7 @@ export const AddBalanceScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={styles.title}>{t('accounts.updateBalance')}</Text>
         <View style={styles.closeButton} />
@@ -128,7 +132,7 @@ export const AddBalanceScreen: React.FC = () => {
                 </Text>
               )}
               {selectedAccountId === account.id && (
-                <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
               )}
             </Card>
           );
@@ -145,7 +149,7 @@ export const AddBalanceScreen: React.FC = () => {
           value={note}
           onChangeText={setNote}
           placeholder={t('addTransaction.notePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
         />
       </ScrollView>
 
@@ -163,10 +167,10 @@ export const AddBalanceScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -197,7 +201,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
   },
   accountCardSelected: {
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: theme.primary,
   },
   accountInfo: {
     flex: 1,
@@ -217,37 +221,37 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   accountBank: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   accountBalance: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
     marginRight: 12,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -269,12 +273,12 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: 'center',
   },
   createButton: {
     marginTop: 24,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

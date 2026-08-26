@@ -15,7 +15,8 @@ import {
   snapshotInvestments,
   PreviousInvestmentSnapshot,
 } from '../utils/monthClose';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import {
   formatCurrency,
   formatDate,
@@ -41,6 +42,9 @@ const sanitizeAmountInput = (text: string): string => {
 const formatInputValue = (n: number): string => n.toFixed(2);
 
 export const MonthCloseScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
 
   const bankAccounts = useStore((state) => state.bankAccounts);
@@ -189,7 +193,7 @@ export const MonthCloseScreen: React.FC = () => {
               value={inputValue}
               onChangeText={(text) => handleAccountInputChange(account.id, text)}
               placeholder="0,00"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </View>
@@ -243,7 +247,7 @@ export const MonthCloseScreen: React.FC = () => {
               value={inputValue}
               onChangeText={(text) => handleInvestmentInputChange(investment.id, text)}
               placeholder="0,00"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </View>
@@ -267,7 +271,7 @@ export const MonthCloseScreen: React.FC = () => {
         <Text
           style={[
             styles.debtAmount,
-            { color: isOwedToMe ? colors.income : colors.expense },
+            { color: isOwedToMe ? theme.income : theme.expense },
           ]}
         >
           {isOwedToMe ? '+' : '-'}
@@ -281,7 +285,7 @@ export const MonthCloseScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {phase === 'entry' ? headerTitle : t('monthClose.summaryTitle')}
@@ -356,7 +360,7 @@ export const MonthCloseScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.variationValue,
-                      { color: variation >= 0 ? colors.income : colors.expense },
+                      { color: variation >= 0 ? theme.income : theme.expense },
                     ]}
                   >
                     {variation >= 0 ? '+' : ''}
@@ -379,7 +383,7 @@ export const MonthCloseScreen: React.FC = () => {
               <Text
                 style={[
                   styles.flowValue,
-                  { color: monthSummary.netBalance >= 0 ? colors.income : colors.expense },
+                  { color: monthSummary.netBalance >= 0 ? theme.income : theme.expense },
                 ]}
               >
                 {monthSummary.netBalance >= 0 ? '+' : ''}
@@ -393,7 +397,7 @@ export const MonthCloseScreen: React.FC = () => {
                       styles.scopeValue,
                       {
                         color:
-                          personalSummary.netBalance >= 0 ? colors.income : colors.expense,
+                          personalSummary.netBalance >= 0 ? theme.income : theme.expense,
                       },
                     ]}
                   >
@@ -408,7 +412,7 @@ export const MonthCloseScreen: React.FC = () => {
                       styles.scopeValue,
                       {
                         color:
-                          businessSummary.netBalance >= 0 ? colors.income : colors.expense,
+                          businessSummary.netBalance >= 0 ? theme.income : theme.expense,
                       },
                     ]}
                   >
@@ -438,7 +442,7 @@ export const MonthCloseScreen: React.FC = () => {
                           styles.breakdownDiff,
                           diff.diff === undefined
                             ? styles.breakdownDiffNeutral
-                            : { color: diff.diff >= 0 ? colors.income : colors.expense },
+                            : { color: diff.diff >= 0 ? theme.income : theme.expense },
                         ]}
                       >
                         {diff.diff === undefined
@@ -468,10 +472,10 @@ export const MonthCloseScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -480,7 +484,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -493,7 +497,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginHorizontal: 4,
   },
   container: {
@@ -505,13 +509,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginTop: 12,
     marginBottom: 12,
   },
@@ -530,34 +534,34 @@ const styles = StyleSheet.create({
   rowName: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   rowSubtitle: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   statusBadge: {
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   statusBadgeModified: {
-    backgroundColor: colors.primaryLight + '33',
+    backgroundColor: theme.primaryLight + '33',
   },
   statusBadgeText: {
     fontSize: 10,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   statusBadgeTextModified: {
-    color: colors.primary,
+    color: theme.primary,
   },
   lastDeclaredText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 8,
   },
   inputRow: {
@@ -569,28 +573,28 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   inlineInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     minWidth: 130,
   },
   inlineCurrency: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginRight: 4,
   },
   inlineInput: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     flex: 1,
     textAlign: 'right',
     padding: 0,
@@ -600,7 +604,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 16,
   },
   debtsCard: {
@@ -619,11 +623,11 @@ const styles = StyleSheet.create({
   debtName: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   debtDirection: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   debtAmount: {
@@ -632,19 +636,19 @@ const styles = StyleSheet.create({
   },
   debtsNote: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 8,
     fontStyle: 'italic',
   },
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -661,38 +665,38 @@ const styles = StyleSheet.create({
   },
   netWorthLabel: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   netWorthValue: {
     fontSize: 36,
     fontWeight: '800',
-    color: colors.primary,
+    color: theme.primary,
     marginTop: 6,
   },
   variationBlock: {
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
     alignItems: 'center',
     width: '100%',
   },
   variationLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   variationValue: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginTop: 4,
   },
   firstCloseExplainer: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: 'center',
     marginTop: 6,
   },
@@ -702,11 +706,11 @@ const styles = StyleSheet.create({
   sectionTitleInCard: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   flowHint: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 4,
   },
   flowValue: {
@@ -720,7 +724,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   scopeItem: {
     flex: 1,
@@ -728,7 +732,7 @@ const styles = StyleSheet.create({
   },
   scopeLabel: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   scopeValue: {
@@ -748,13 +752,13 @@ const styles = StyleSheet.create({
   breakdownName: {
     flex: 1,
     fontSize: 13,
-    color: colors.text,
+    color: theme.text,
     fontWeight: '500',
   },
   breakdownBalance: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     minWidth: 80,
     textAlign: 'right',
   },
@@ -765,12 +769,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   breakdownDiffNeutral: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: '500',
     fontStyle: 'italic',
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
 });

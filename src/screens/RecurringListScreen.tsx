@@ -9,7 +9,8 @@ import { Card } from '../components/Card';
 import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useStore } from '../store/useStore';
 import { getDueRecurrences } from '../hooks/useAccounts';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { colors, Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -17,6 +18,7 @@ import { RecurringRule, TransactionType } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// Acentos idénticos en claro/oscuro: usamos la paleta estática, no el tema activo.
 const getTypeMeta = (
   type: TransactionType
 ): { icon: keyof typeof Ionicons.glyphMap; color: string; sign: '' | '+' | '-' } => {
@@ -32,6 +34,9 @@ const getTypeMeta = (
 };
 
 export const RecurringListScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const recurringRules = useStore((state) => state.recurringRules);
   const updateRecurringRule = useStore((state) => state.updateRecurringRule);
@@ -105,8 +110,8 @@ export const RecurringListScreen: React.FC = () => {
             <Switch
               value={item.active}
               onValueChange={(value) => handleToggleActive(item.id, value)}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
-              thumbColor={item.active ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: theme.border, true: theme.primaryLight }}
+              thumbColor={item.active ? theme.primary : '#f4f3f4'}
             />
           </View>
         </View>
@@ -114,7 +119,7 @@ export const RecurringListScreen: React.FC = () => {
         {isDue && (
           <View style={styles.dueRow}>
             <View style={styles.dueBadge}>
-              <Ionicons name="alert-circle" size={14} color={colors.warning} />
+              <Ionicons name="alert-circle" size={14} color={theme.warning} />
               <Text style={styles.dueBadgeText}>{t('recurring.overdue')}</Text>
             </View>
             <RecurrenceActions
@@ -129,7 +134,7 @@ export const RecurringListScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="repeat-outline" size={64} color={colors.textSecondary} />
+      <Ionicons name="repeat-outline" size={64} color={theme.textSecondary} />
       <Text style={styles.emptyTitle}>{t('recurring.emptyTitle')}</Text>
       <Text style={styles.emptyDescription}>{t('recurring.emptyDescription')}</Text>
       <Pressable
@@ -145,7 +150,7 @@ export const RecurringListScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('recurring.title')}</Text>
         <View style={styles.backButton} />
@@ -173,10 +178,10 @@ export const RecurringListScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -185,7 +190,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   listContent: {
     padding: 20,
@@ -209,7 +214,7 @@ const styles = StyleSheet.create({
   ruleCard: {},
   ruleCardDue: {
     borderWidth: 1.5,
-    borderColor: colors.warning,
+    borderColor: theme.warning,
   },
   ruleHeader: {
     flexDirection: 'row',
@@ -230,11 +235,11 @@ const styles = StyleSheet.create({
   ruleName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   ruleMeta: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   ruleRight: {
@@ -249,7 +254,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
   dueBadgeText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.warning,
+    color: theme.warning,
   },
   emptyContainer: {
     flex: 1,
@@ -276,20 +281,20 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginTop: 16,
     textAlign: 'center',
   },
   emptyDescription: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
   },
   emptyButton: {
     marginTop: 24,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 16,
@@ -306,7 +311,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

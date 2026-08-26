@@ -52,26 +52,99 @@ export const colors = {
   shadowDark: 'rgba(0, 0, 0, 0.3)',
 } as const;
 
-export const lightTheme = {
+interface CategoryColorsShape {
+  casa: string;
+  comida: string;
+  suscripciones: string;
+  ocio: string;
+  otros: string;
+  viajes: string;
+}
+
+interface ThemeShape {
+  background: string;
+  card: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  shadow: string;
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  income: string;
+  incomeLight: string;
+  incomeDark: string;
+  expense: string;
+  expenseLight: string;
+  expenseDark: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+  categoryColors: CategoryColorsShape;
+}
+
+export const lightTheme: ThemeShape = {
+  // Neutral / surface colors (vary between light and dark)
   background: colors.background,
   card: colors.card,
   text: colors.text,
   textSecondary: colors.textSecondary,
   border: colors.border,
+  shadow: colors.shadow,
+
+  // Accent / semantic colors (kept identical between themes on purpose)
   primary: colors.primary,
+  primaryLight: colors.primaryLight,
+  primaryDark: colors.primaryDark,
   income: colors.income,
+  incomeLight: colors.incomeLight,
+  incomeDark: colors.incomeDark,
   expense: colors.expense,
+  expenseLight: colors.expenseLight,
+  expenseDark: colors.expenseDark,
+  success: colors.success,
+  warning: colors.warning,
+  error: colors.error,
+  info: colors.info,
+  categoryColors: colors.categoryColors,
 };
 
-export const darkTheme = {
+export const darkTheme: ThemeShape = {
+  // Neutral / surface colors: dark backgrounds, light text, softer shadow
   background: colors.backgroundDark,
   card: colors.cardDark,
   text: colors.textDark,
   textSecondary: colors.textSecondaryDark,
   border: colors.borderDark,
+  shadow: colors.shadowDark,
+
+  // Accent / semantic colors: same vivid accents as light theme, they
+  // already carry enough contrast against the dark surfaces above.
   primary: colors.primary,
+  primaryLight: colors.primaryLight,
+  primaryDark: colors.primaryDark,
   income: colors.income,
+  incomeLight: colors.incomeLight,
+  incomeDark: colors.incomeDark,
   expense: colors.expense,
+  expenseLight: colors.expenseLight,
+  expenseDark: colors.expenseDark,
+  success: colors.success,
+  warning: colors.warning,
+  error: colors.error,
+  info: colors.info,
+  categoryColors: colors.categoryColors,
 };
 
-export type Theme = typeof lightTheme;
+export type Theme = ThemeShape;
+
+/** Convierte un color hexadecimal ('#RRGGBB') a una cadena rgba() con la opacidad dada. */
+export const hexToRgba = (hex: string, opacity: number): string => {
+  const sanitized = hex.replace('#', '');
+  const bigint = parseInt(sanitized, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};

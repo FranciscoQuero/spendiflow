@@ -17,7 +17,8 @@ import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
 import { getProvisionBalance } from '../hooks/useAccounts';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -25,6 +26,9 @@ import { RootStackParamList } from '../navigation/types';
 type RouteProps = RouteProp<RootStackParamList, 'ProvisionDetail'>;
 
 export const ProvisionDetailScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const { provisionId } = route.params;
@@ -52,7 +56,7 @@ export const ProvisionDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.notFound}>
@@ -157,11 +161,11 @@ export const ProvisionDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{provision.name}</Text>
         <Pressable onPress={handleDelete} style={styles.backButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
+          <Ionicons name="trash-outline" size={24} color={theme.expense} />
         </Pressable>
       </View>
 
@@ -201,14 +205,14 @@ export const ProvisionDetailScreen: React.FC = () => {
 
           <View style={styles.buttonRow}>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: colors.income }]}
+              style={[styles.actionButton, { backgroundColor: theme.income }]}
               onPress={() => setShowContributeModal(true)}
             >
               <Ionicons name="add" size={20} color="white" />
               <Text style={styles.buttonText}>{t('provisions.contribute')}</Text>
             </Pressable>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: colors.expense }]}
+              style={[styles.actionButton, { backgroundColor: theme.expense }]}
               onPress={() => setShowWithdrawModal(true)}
             >
               <Ionicons name="remove" size={20} color="white" />
@@ -221,7 +225,7 @@ export const ProvisionDetailScreen: React.FC = () => {
               <Ionicons
                 name={provision.archived ? 'archive' : 'archive-outline'}
                 size={18}
-                color={colors.textSecondary}
+                color={theme.textSecondary}
               />
               <Text style={styles.secondaryButtonText}>
                 {provision.archived ? t('provisions.unarchive') : t('provisions.archive')}
@@ -244,7 +248,7 @@ export const ProvisionDetailScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.historyAmount,
-                      { color: entry.amount >= 0 ? colors.income : colors.expense },
+                      { color: entry.amount >= 0 ? theme.income : theme.expense },
                     ]}
                   >
                     {entry.amount >= 0 ? '+' : ''}
@@ -280,7 +284,7 @@ export const ProvisionDetailScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -309,7 +313,7 @@ export const ProvisionDetailScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -318,10 +322,10 @@ export const ProvisionDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -330,7 +334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -341,7 +345,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -355,7 +359,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notFoundText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 16,
   },
   balanceCard: {
@@ -372,18 +376,18 @@ const styles = StyleSheet.create({
   },
   accountName: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   balanceLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   balanceValue: {
     fontSize: 36,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginVertical: 8,
   },
   progressSection: {
@@ -393,7 +397,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 10,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     borderRadius: 5,
     overflow: 'hidden',
   },
@@ -403,7 +407,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 6,
     textAlign: 'center',
   },
@@ -440,13 +444,13 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: '500',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 12,
   },
   historyRow: {
@@ -457,11 +461,11 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   historyNote: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   historyAmount: {
@@ -470,16 +474,16 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 24,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -488,20 +492,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -509,24 +513,24 @@ const styles = StyleSheet.create({
   },
   modalHint: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
 });

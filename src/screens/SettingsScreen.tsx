@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,11 @@ import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { t, setLocale } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
+import { AppSettings } from '../types';
 import {
   validateBackup,
   writeBackupFile,
@@ -35,7 +37,16 @@ const CURRENCY_OPTIONS: { currency: string; currencySymbol: string; label: strin
   { currency: 'GBP', currencySymbol: '£', label: 'GBP £' },
 ];
 
+const THEME_OPTIONS: { value: AppSettings['theme']; labelKey: string }[] = [
+  { value: 'light', labelKey: 'settings.themeLight' },
+  { value: 'dark', labelKey: 'settings.themeDark' },
+  { value: 'system', labelKey: 'settings.themeSystem' },
+];
+
 export const SettingsScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const settings = useStore((state) => state.settings);
   const updateSettings = useStore((state) => state.updateSettings);
@@ -55,6 +66,10 @@ export const SettingsScreen: React.FC = () => {
 
   const handleCurrencyChange = (currency: string, currencySymbol: string) => {
     updateSettings({ currency, currencySymbol });
+  };
+
+  const handleThemeChange = (themeSetting: AppSettings['theme']) => {
+    updateSettings({ theme: themeSetting });
   };
 
   const handleResetData = () => {
@@ -198,7 +213,7 @@ export const SettingsScreen: React.FC = () => {
         <Ionicons
           name={icon}
           size={22}
-          color={danger ? colors.expense : colors.textSecondary}
+          color={danger ? theme.expense : theme.textSecondary}
         />
         <Text style={[styles.settingLabel, danger && styles.dangerText]}>
           {label}
@@ -206,12 +221,12 @@ export const SettingsScreen: React.FC = () => {
       </View>
       <View style={styles.settingRight}>
         {loading ? (
-          <ActivityIndicator size="small" color={colors.textSecondary} />
+          <ActivityIndicator size="small" color={theme.textSecondary} />
         ) : (
           <>
             {value && <Text style={styles.settingValue}>{value}</Text>}
             {showChevron && onPress && (
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+              <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
             )}
           </>
         )}
@@ -242,7 +257,7 @@ export const SettingsScreen: React.FC = () => {
         {label}
       </Text>
       {settings.language === language && (
-        <Ionicons name="checkmark" size={20} color={colors.primary} />
+        <Ionicons name="checkmark" size={20} color={theme.primary} />
       )}
     </Pressable>
   );
@@ -265,7 +280,28 @@ export const SettingsScreen: React.FC = () => {
         <Text style={[styles.languageText, active && styles.languageTextActive]}>
           {label}
         </Text>
-        {active && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+        {active && <Ionicons name="checkmark" size={20} color={theme.primary} />}
+      </Pressable>
+    );
+  };
+
+  const ThemeOption = ({
+    value,
+    label,
+  }: {
+    value: AppSettings['theme'];
+    label: string;
+  }) => {
+    const active = settings.theme === value;
+    return (
+      <Pressable
+        style={[styles.languageOption, active && styles.languageOptionActive]}
+        onPress={() => handleThemeChange(value)}
+      >
+        <Text style={[styles.languageText, active && styles.languageTextActive]}>
+          {label}
+        </Text>
+        {active && <Ionicons name="checkmark" size={20} color={theme.primary} />}
       </Pressable>
     );
   };
@@ -288,6 +324,17 @@ export const SettingsScreen: React.FC = () => {
           <LanguageOption language="es" label={t('settings.spanish')} />
           <View style={styles.divider} />
           <LanguageOption language="en" label={t('settings.english')} />
+        </Card>
+
+        {/* Theme Section */}
+        <Text style={styles.sectionTitle}>{t('settings.theme')}</Text>
+        <Card style={styles.card}>
+          {THEME_OPTIONS.map((option, index) => (
+            <React.Fragment key={option.value}>
+              {index > 0 && <View style={styles.divider} />}
+              <ThemeOption value={option.value} label={t(option.labelKey)} />
+            </React.Fragment>
+          ))}
         </Card>
 
         {/* Currency Section */}
@@ -374,10 +421,10 @@ export const SettingsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -392,19 +439,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   dangerSection: {
-    color: colors.expense,
+    color: theme.expense,
   },
   card: {
     padding: 0,
@@ -417,7 +464,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   pressed: {
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -426,10 +473,10 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
   },
   dangerText: {
-    color: colors.expense,
+    color: theme.expense,
   },
   settingRight: {
     flexDirection: 'row',
@@ -438,11 +485,11 @@ const styles = StyleSheet.create({
   },
   settingValue: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginLeft: 50,
   },
   languageOption: {
@@ -452,19 +499,19 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   languageOptionActive: {
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: `${theme.primary}10`,
   },
   languageText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
   },
   languageTextActive: {
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
   },
   footer: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 32,
     fontSize: 14,
   },

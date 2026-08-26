@@ -18,7 +18,8 @@ import {
   getMyShareBalance,
   getProvisionBalance,
 } from '../hooks/useAccounts';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -42,6 +43,9 @@ const roleLabel = (role: string): string => {
 };
 
 export const AccountsScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const bankAccounts = useStore((state) => state.bankAccounts);
   const provisions = useStore((state) => state.provisions);
@@ -112,7 +116,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('AccountDetail', { id: account.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.primary }]}>
+          <View style={[styles.iconCircle, { backgroundColor: theme.primary }]}>
             <Ionicons name="wallet" size={20} color="white" />
           </View>
           <View style={styles.itemInfo}>
@@ -172,7 +176,7 @@ export const AccountsScreen: React.FC = () => {
             style={styles.provisionAddChip}
             onPress={() => navigation.navigate('AddProvision', { accountId: account.id })}
           >
-            <Ionicons name="add" size={14} color={colors.primary} />
+            <Ionicons name="add" size={14} color={theme.primary} />
           </Pressable>
         </View>
       </Card>
@@ -189,7 +193,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('InvestmentDetail', { id: investment.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.income }]}>
+          <View style={[styles.iconCircle, { backgroundColor: theme.income }]}>
             <Ionicons name="trending-up" size={20} color="white" />
           </View>
           <View style={styles.itemInfo}>
@@ -199,7 +203,7 @@ export const AccountsScreen: React.FC = () => {
         </View>
         <View style={styles.itemFooter}>
           <Text style={styles.balanceLabel}>{t('accounts.totalContributed')}</Text>
-          <Text style={[styles.balanceValue, { color: colors.income }]}>
+          <Text style={[styles.balanceValue, { color: theme.income }]}>
             {formatCurrency(totalContributed, settings.currencySymbol, locale)}
           </Text>
           {investment.currentValue && (
@@ -216,7 +220,7 @@ export const AccountsScreen: React.FC = () => {
     const paid = debt.payments.reduce((s, p) => s + p.amount, 0);
     const remaining = Math.max(debt.totalAmount - paid, 0);
     const progress = debt.totalAmount > 0 ? (paid / debt.totalAmount) * 100 : 0;
-    const accentColor = variant === 'iOwe' ? colors.expense : colors.income;
+    const accentColor = variant === 'iOwe' ? theme.expense : theme.income;
 
     return (
       <Card
@@ -252,7 +256,7 @@ export const AccountsScreen: React.FC = () => {
             <Text
               style={[
                 styles.progressText,
-                variant === 'owedToMe' && { color: colors.income, fontWeight: '600' },
+                variant === 'owedToMe' && { color: theme.income, fontWeight: '600' },
               ]}
             >
               {variant === 'iOwe' ? t('accounts.remaining') : t('debts.pendingToCollect')}:{' '}
@@ -275,7 +279,7 @@ export const AccountsScreen: React.FC = () => {
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <Pressable style={styles.addButton} onPress={onAdd}>
-        <Ionicons name="add-circle" size={28} color={colors.primary} />
+        <Ionicons name="add-circle" size={28} color={theme.primary} />
       </Pressable>
     </View>
   );
@@ -295,7 +299,7 @@ export const AccountsScreen: React.FC = () => {
               style={styles.monthCloseButton}
               onPress={() => navigation.navigate('MonthClose')}
             >
-              <Ionicons name="checkmark-done-circle-outline" size={18} color={colors.primary} />
+              <Ionicons name="checkmark-done-circle-outline" size={18} color={theme.primary} />
               <Text style={styles.monthCloseButtonText}>{t('monthClose.entryPoint')}</Text>
             </Pressable>
           </View>
@@ -305,13 +309,13 @@ export const AccountsScreen: React.FC = () => {
         <View style={styles.summaryRow}>
           <Card style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>{t('accounts.totalBalance')}</Text>
-            <Text style={[styles.summaryValue, { color: colors.primary }]}>
+            <Text style={[styles.summaryValue, { color: theme.primary }]}>
               {formatCurrency(totalBankBalance, settings.currencySymbol, locale)}
             </Text>
           </Card>
           <Card style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>{t('accounts.investments')}</Text>
-            <Text style={[styles.summaryValue, { color: colors.income }]}>
+            <Text style={[styles.summaryValue, { color: theme.income }]}>
               {formatCurrency(totalInvested, settings.currencySymbol, locale)}
             </Text>
           </Card>
@@ -321,7 +325,7 @@ export const AccountsScreen: React.FC = () => {
           {totalDebt > 0 && (
             <Card style={[styles.summaryCard, !(totalOwedToMe > 0) && styles.fullWidthCard]}>
               <Text style={styles.summaryLabel}>{t('accounts.totalDebt')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.expense }]}>
+              <Text style={[styles.summaryValue, { color: theme.expense }]}>
                 -{formatCurrency(totalDebt, settings.currencySymbol, locale)}
               </Text>
             </Card>
@@ -329,7 +333,7 @@ export const AccountsScreen: React.FC = () => {
           {totalOwedToMe > 0 && (
             <Card style={[styles.summaryCard, !(totalDebt > 0) && styles.fullWidthCard]}>
               <Text style={styles.summaryLabel}>{t('accounts.owedToMe')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.income }]}>
+              <Text style={[styles.summaryValue, { color: theme.income }]}>
                 +{formatCurrency(totalOwedToMe, settings.currencySymbol, locale)}
               </Text>
             </Card>
@@ -395,7 +399,7 @@ export const AccountsScreen: React.FC = () => {
               <Ionicons
                 name={showArchived ? 'chevron-up' : 'chevron-down'}
                 size={20}
-                color={colors.textSecondary}
+                color={theme.textSecondary}
               />
             </Pressable>
             {showArchived && archivedAccounts.map(renderBankAccount)}
@@ -406,10 +410,10 @@ export const AccountsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -429,23 +433,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   monthCloseButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   monthCloseButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -461,7 +465,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
     textTransform: 'uppercase',
   },
@@ -479,12 +483,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   subsectionTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.income,
+    color: theme.income,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -513,15 +517,15 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   itemSubtitle: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   roleBadge: {
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -529,29 +533,29 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     fontSize: 10,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
     textTransform: 'uppercase',
   },
   itemFooter: {},
   balanceLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   balanceValue: {
     fontSize: 22,
     fontWeight: '700',
-    color: colors.primary,
+    color: theme.primary,
     marginTop: 2,
   },
   secondaryText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 4,
   },
   lastUpdate: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 4,
   },
   provisionChipRow: {
@@ -572,7 +576,7 @@ const styles = StyleSheet.create({
   },
   provisionChipText: {
     fontSize: 11,
-    color: colors.text,
+    color: theme.text,
     fontWeight: '500',
     maxWidth: 70,
   },
@@ -585,7 +589,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -594,7 +598,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -609,14 +613,14 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   emptyCard: {
     marginBottom: 12,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 16,
   },
   archivedSection: {

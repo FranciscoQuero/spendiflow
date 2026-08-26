@@ -222,6 +222,10 @@ export default {
     language: 'Idioma',
     spanish: 'Español',
     english: 'English',
+    theme: 'Tema',
+    themeLight: 'Claro',
+    themeDark: 'Oscuro',
+    themeSystem: 'Sistema',
     currency: 'Moneda',
     categories: 'Categorías',
     editCategories: 'Editar categorías',
@@ -277,6 +281,13 @@ export default {
   // Transfers
   transfers: {
     title: 'Transferencias',
+  },
+
+  // Error boundary (pantalla de error inesperado)
+  errorBoundary: {
+    title: 'Algo ha ido mal',
+    message: 'Ha ocurrido un error inesperado. Puedes intentarlo de nuevo.',
+    retry: 'Reintentar',
   },
 
   // Provisions (huchas)

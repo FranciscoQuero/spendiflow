@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 
 interface ChipProps {
   label: string;
@@ -14,8 +15,12 @@ export const Chip: React.FC<ChipProps> = ({
   label,
   selected = false,
   onPress,
-  color = colors.primary,
+  color,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const activeColor = color ?? theme.primary;
+
   const handlePress = () => {
     Haptics.selectionAsync();
     onPress?.();
@@ -25,7 +30,7 @@ export const Chip: React.FC<ChipProps> = ({
     <Pressable
       style={({ pressed }) => [
         styles.chip,
-        selected && { backgroundColor: color, borderColor: color },
+        selected && { backgroundColor: activeColor, borderColor: activeColor },
         pressed && styles.pressed,
       ]}
       onPress={handlePress}
@@ -35,14 +40,14 @@ export const Chip: React.FC<ChipProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 14,
-    color: colors.text,
+    color: theme.text,
     fontWeight: '500',
   },
   textSelected: {

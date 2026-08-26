@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -41,6 +42,9 @@ const roleLabel = (role: AccountRole): string => {
 };
 
 export const AddAccountScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const accountId = route.params?.accountId;
@@ -146,7 +150,7 @@ export const AddAccountScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={styles.title}>
           {isEditMode ? t('accounts.editAccount') : t('accounts.addAccount')}
@@ -166,7 +170,7 @@ export const AddAccountScreen: React.FC = () => {
           value={name}
           onChangeText={setName}
           placeholder={t('accounts.accountNamePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           autoFocus={!isEditMode}
         />
 
@@ -177,7 +181,7 @@ export const AddAccountScreen: React.FC = () => {
           value={bankName}
           onChangeText={setBankName}
           placeholder={t('accounts.bankNamePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
         />
 
         {/* Role */}
@@ -206,7 +210,7 @@ export const AddAccountScreen: React.FC = () => {
           value={floor}
           onChangeText={setFloor}
           placeholder={t('accounts.floorPlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           keyboardType="decimal-pad"
         />
 
@@ -218,7 +222,7 @@ export const AddAccountScreen: React.FC = () => {
             value={ownershipPercent}
             onChangeText={handleChangeOwnership}
             placeholder={t('accounts.ownershipSharePlaceholder')}
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={theme.textSecondary}
             keyboardType="number-pad"
             maxLength={3}
           />
@@ -248,10 +252,10 @@ export const AddAccountScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -282,7 +286,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
@@ -290,18 +294,18 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: -4,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   chipRow: {
     flexDirection: 'row',
@@ -312,18 +316,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   chipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   chipTextSelected: {
     color: 'white',
@@ -339,17 +343,17 @@ const styles = StyleSheet.create({
   percentSign: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',

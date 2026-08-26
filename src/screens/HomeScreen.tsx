@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +16,8 @@ import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { colors, Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getUpcomingPlannedEvents } from '../utils/plannedEvents';
 import { t } from '../locales/i18n';
@@ -28,6 +28,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const MAX_VISIBLE_DUE = 3;
 
+// Acentos idénticos en claro/oscuro: usamos la paleta estática, no el tema activo.
 const getTypeMeta = (
   type: TransactionType
 ): { color: string; sign: '' | '+' | '-' } => {
@@ -43,6 +44,9 @@ const getTypeMeta = (
 };
 
 export const HomeScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const settings = useStore((state) => state.settings);
   const confirmRecurrence = useStore((state) => state.confirmRecurrence);
@@ -67,7 +71,6 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -229,28 +232,28 @@ export const HomeScreen: React.FC = () => {
           <QuickActionButton
             icon="remove-circle"
             label={t('home.addExpense')}
-            color={colors.expense}
+            color={theme.expense}
             onPress={() => navigation.navigate('AddTransaction', { type: 'expense' })}
           />
           <View style={styles.actionSpacer} />
           <QuickActionButton
             icon="add-circle"
             label={t('home.addIncome')}
-            color={colors.income}
+            color={theme.income}
             onPress={() => navigation.navigate('AddTransaction', { type: 'income' })}
           />
           <View style={styles.actionSpacer} />
           <QuickActionButton
             icon="wallet"
             label={t('home.addBalance')}
-            color={colors.primary}
+            color={theme.primary}
             onPress={() => navigation.navigate('AddBalance')}
           />
           <View style={styles.actionSpacer} />
           <QuickActionButton
             icon="repeat"
             label={t('recurring.title')}
-            color={colors.categoryColors.suscripciones}
+            color={theme.categoryColors.suscripciones}
             onPress={() => navigation.navigate('RecurringList')}
           />
         </View>
@@ -290,10 +293,10 @@ export const HomeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -307,12 +310,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   appName: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginTop: 4,
   },
   summaryCard: {
@@ -321,26 +324,26 @@ const styles = StyleSheet.create({
   pendingCard: {
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: colors.warning,
+    borderColor: theme.warning,
   },
   upcomingCard: {
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: theme.primary,
   },
   eventDate: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   eventDateOverdue: {
-    color: colors.warning,
+    color: theme.warning,
     fontWeight: '600',
   },
   eventAmount: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   pendingHeader: {
     flexDirection: 'row',
@@ -361,7 +364,7 @@ const styles = StyleSheet.create({
   pendingName: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   pendingAmount: {
     fontSize: 14,
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
   },
   pendingDivider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
   moreRow: {
     paddingTop: 8,
@@ -378,13 +381,13 @@ const styles = StyleSheet.create({
   moreText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
     textAlign: 'center',
   },
   summaryTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 16,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -398,7 +401,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
   },
   summaryValue: {
@@ -406,20 +409,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   expenseValue: {
-    color: colors.expense,
+    color: theme.expense,
   },
   incomeValue: {
-    color: colors.income,
+    color: theme.income,
   },
   balanceContainer: {
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   balanceLabel: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
   },
   balanceValue: {
@@ -429,7 +432,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 12,
   },
   quickActions: {
@@ -447,17 +450,17 @@ const styles = StyleSheet.create({
   },
   seeAll: {
     fontSize: 14,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginLeft: 52,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 24,
   },
 });

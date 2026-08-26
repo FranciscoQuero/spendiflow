@@ -14,7 +14,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { TransactionItem } from '../components/TransactionItem';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { Transaction } from '../types';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -23,6 +24,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type FilterType = 'all' | 'expenses' | 'incomes' | 'transfers';
 
 export const TransactionsScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const transactions = useStore((state) => state.transactions);
   const deleteTransaction = useStore((state) => state.deleteTransaction);
@@ -72,7 +76,7 @@ export const TransactionsScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
+      <Ionicons name="receipt-outline" size={64} color={theme.textSecondary} />
       <Text style={styles.emptyText}>{t('transactions.noTransactions')}</Text>
     </View>
   );
@@ -156,10 +160,10 @@ export const TransactionsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -172,7 +176,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   filterContainer: {
     flexDirection: 'row',
@@ -184,18 +188,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   filterButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   filterButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   filterButtonTextActive: {
     color: 'white',
@@ -207,7 +211,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginLeft: 52,
   },
   emptyContainer: {
@@ -219,7 +223,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   fabContainer: {
     position: 'absolute',
@@ -240,13 +244,13 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabExpense: {
-    backgroundColor: colors.expense,
+    backgroundColor: theme.expense,
   },
   fabIncome: {
-    backgroundColor: colors.income,
+    backgroundColor: theme.income,
   },
   fabTransfer: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     width: 48,
     height: 48,
     borderRadius: 24,

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Transaction, Category } from '../types';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatRelativeDate } from '../utils/formatters';
 import { useStore } from '../store/useStore';
 import { t } from '../locales/i18n';
@@ -30,6 +31,9 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   onPress,
   onLongPress,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const categories = useStore((state) => state.categories);
   const bankAccounts = useStore((state) => state.bankAccounts);
   const settings = useStore((state) => state.settings);
@@ -61,7 +65,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         onPress={onPress}
         onLongPress={onLongPress}
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.textSecondary }]}>
+        <View style={[styles.iconContainer, { backgroundColor: theme.textSecondary }]}>
           <Ionicons name="swap-horizontal" size={20} color="white" />
         </View>
 
@@ -93,7 +97,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       <View
         style={[
           styles.iconContainer,
-          { backgroundColor: category?.color || colors.textSecondary },
+          { backgroundColor: category?.color || theme.textSecondary },
         ]}
       >
         <Ionicons
@@ -137,7 +141,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,14 +170,14 @@ const styles = StyleSheet.create({
   concept: {
     fontSize: 16,
     fontWeight: '500',
-    color: colors.text,
+    color: theme.text,
     flexShrink: 1,
   },
   businessBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: colors.primaryLight,
+    backgroundColor: theme.primaryLight,
   },
   businessBadgeText: {
     fontSize: 10,
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   amount: {
@@ -191,12 +195,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   expense: {
-    color: colors.expense,
+    color: theme.expense,
   },
   income: {
-    color: colors.income,
+    color: theme.income,
   },
   neutral: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
 });

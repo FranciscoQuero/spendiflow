@@ -16,7 +16,8 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -24,6 +25,9 @@ import { RootStackParamList } from '../navigation/types';
 type RouteProps = RouteProp<RootStackParamList, 'InvestmentDetail'>;
 
 export const InvestmentDetailScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
@@ -52,7 +56,7 @@ export const InvestmentDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.notFound}>
@@ -126,11 +130,11 @@ export const InvestmentDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{investment.name}</Text>
         <Pressable onPress={handleDelete} style={styles.backButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
+          <Ionicons name="trash-outline" size={24} color={theme.expense} />
         </Pressable>
       </View>
 
@@ -142,14 +146,14 @@ export const InvestmentDetailScreen: React.FC = () => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>{t('accounts.totalContributed')}</Text>
-              <Text style={[styles.statValue, { color: colors.income }]}>
+              <Text style={[styles.statValue, { color: theme.income }]}>
                 {formatCurrency(totalContributed, settings.currencySymbol, locale)}
               </Text>
             </View>
             {investment.currentValue && (
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>{t('accounts.currentValue')}</Text>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
+                <Text style={[styles.statValue, { color: theme.primary }]}>
                   {formatCurrency(investment.currentValue, settings.currencySymbol, locale)}
                 </Text>
               </View>
@@ -173,14 +177,14 @@ export const InvestmentDetailScreen: React.FC = () => {
 
           <View style={styles.buttonRow}>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: colors.income }]}
+              style={[styles.actionButton, { backgroundColor: theme.income }]}
               onPress={() => setShowAddModal(true)}
             >
               <Ionicons name="add" size={20} color="white" />
               <Text style={styles.buttonText}>Add Contribution</Text>
             </Pressable>
             <Pressable
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              style={[styles.actionButton, { backgroundColor: theme.primary }]}
               onPress={() => setShowValueModal(true)}
             >
               <Ionicons name="refresh" size={20} color="white" />
@@ -239,7 +243,7 @@ export const InvestmentDetailScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -266,10 +270,10 @@ export const InvestmentDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -289,7 +293,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -303,7 +307,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notFoundText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 16,
   },
   summaryCard: {
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
   },
   investmentType: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
     textTransform: 'uppercase',
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   statValue: {
@@ -338,11 +342,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   returnLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   returnValue: {
@@ -351,10 +355,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   positiveReturn: {
-    color: colors.income,
+    color: theme.income,
   },
   negativeReturn: {
-    color: colors.expense,
+    color: theme.expense,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -378,7 +382,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 12,
   },
   historyRow: {
@@ -389,30 +393,30 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   historyNote: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   historyAmount: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.income,
+    color: theme.income,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 24,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -421,20 +425,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -443,18 +447,18 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
 });

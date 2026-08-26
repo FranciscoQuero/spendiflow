@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { useStore } from '../store/useStore';
 
 interface AmountInputProps {
@@ -16,6 +17,9 @@ export const AmountInput: React.FC<AmountInputProps> = ({
   type = 'expense',
   autoFocus = false,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const settings = useStore((state) => state.settings);
   const [isFocused, setIsFocused] = useState(false);
   const colorStyle =
@@ -55,19 +59,19 @@ export const AmountInput: React.FC<AmountInputProps> = ({
         onChangeText={handleChange}
         keyboardType="decimal-pad"
         placeholder="0,00"
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={theme.textSecondary}
         autoFocus={autoFocus}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         selectionColor={
-          type === 'income' ? colors.income : type === 'transfer' ? colors.primary : colors.expense
+          type === 'income' ? theme.income : type === 'transfer' ? theme.primary : theme.expense
         }
       />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -78,7 +82,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '300',
     marginRight: 8,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   currencyFocused: {
     opacity: 1,
@@ -90,12 +94,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   expenseText: {
-    color: colors.expense,
+    color: theme.expense,
   },
   incomeText: {
-    color: colors.income,
+    color: theme.income,
   },
   transferText: {
-    color: colors.primary,
+    color: theme.primary,
   },
 });

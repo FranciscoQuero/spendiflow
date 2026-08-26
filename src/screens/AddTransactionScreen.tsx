@@ -20,7 +20,8 @@ import DateTimePicker, {
 import { AmountInput } from '../components/AmountInput';
 import { CategoryChip } from '../components/CategoryChip';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO, formatDateLong } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -37,6 +38,9 @@ const yesterdayOf = (base: Date): Date => {
 };
 
 export const AddTransactionScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
 
@@ -227,7 +231,7 @@ export const AddTransactionScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={colors.text} />
+            <Ionicons name="close" size={28} color={theme.text} />
           </Pressable>
           <Text style={styles.title}>{screenTitle}</Text>
           <View style={styles.closeButton} />
@@ -259,7 +263,7 @@ export const AddTransactionScreen: React.FC = () => {
                   ? t('addTransaction.conceptPlaceholderTransfer')
                   : t('addTransaction.conceptPlaceholder')
               }
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
 
@@ -267,7 +271,7 @@ export const AddTransactionScreen: React.FC = () => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('addTransaction.date')}</Text>
             <Pressable style={styles.dateField} onPress={() => setShowDatePicker(true)}>
-              <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="calendar-outline" size={18} color={theme.textSecondary} />
               <Text style={styles.dateFieldText}>{formatDateLong(date.toISOString(), locale)}</Text>
             </Pressable>
 
@@ -516,7 +520,7 @@ export const AddTransactionScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
               multiline
               numberOfLines={3}
             />
@@ -538,10 +542,10 @@ export const AddTransactionScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -553,7 +557,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -564,7 +568,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -578,19 +582,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   noteInput: {
     minHeight: 80,
@@ -604,15 +608,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },
   subChipText: {
     fontSize: 14,
-    color: colors.text,
+    color: theme.text,
   },
   subChipTextSelected: {
     color: 'white',
@@ -622,34 +626,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginBottom: 8,
   },
   dateFieldText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
   },
   quickDateChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },
   quickDateChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   quickDateText: {
     fontSize: 14,
-    color: colors.text,
+    color: theme.text,
   },
   quickDateTextActive: {
     color: 'white',
@@ -657,20 +661,20 @@ const styles = StyleSheet.create({
   },
   datePickerContainer: {
     marginTop: 8,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     overflow: 'hidden',
   },
   datePickerDone: {
     padding: 14,
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   datePickerDoneText: {
-    color: colors.primary,
+    color: theme.primary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -678,20 +682,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },
   accountChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   accountChipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
+    color: theme.text,
   },
   accountChipTextSelected: {
     color: 'white',
@@ -699,10 +703,10 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     padding: 4,
     alignSelf: 'flex-start',
   },
@@ -712,12 +716,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   segmentButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   segmentText: {
     fontSize: 13,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   segmentTextActive: {
     color: 'white',
@@ -726,9 +730,9 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
     borderRadius: 16,
@@ -736,13 +740,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   expenseButton: {
-    backgroundColor: colors.expense,
+    backgroundColor: theme.expense,
   },
   incomeButton: {
-    backgroundColor: colors.income,
+    backgroundColor: theme.income,
   },
   transferButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   disabledButton: {
     opacity: 0.5,

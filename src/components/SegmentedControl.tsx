@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 
 interface SegmentedControlOption<T extends string> {
   value: T;
@@ -19,6 +20,9 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const handlePress = (optionValue: T) => {
     if (optionValue === value) return;
     Haptics.selectionAsync();
@@ -48,13 +52,13 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     padding: 4,
   },
   segment: {
@@ -64,12 +68,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   labelSelected: {
     color: 'white',

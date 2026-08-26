@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 
@@ -28,6 +29,9 @@ const investmentTypes = [
 ];
 
 export const AddInvestmentScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const addInvestment = useStore((state) => state.addInvestment);
   const addContribution = useStore((state) => state.addContribution);
@@ -74,7 +78,7 @@ export const AddInvestmentScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={styles.title}>{t('accounts.addInvestment')}</Text>
         <View style={styles.closeButton} />
@@ -92,7 +96,7 @@ export const AddInvestmentScreen: React.FC = () => {
           value={name}
           onChangeText={setName}
           placeholder="e.g., S&P 500 Index Fund"
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           autoFocus
         />
 
@@ -146,10 +150,10 @@ export const AddInvestmentScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -169,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -180,20 +184,20 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   typeContainer: {
     flexDirection: 'row',
@@ -203,19 +207,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     marginRight: 8,
     marginBottom: 8,
   },
   typeChipSelected: {
-    backgroundColor: colors.income,
-    borderColor: colors.income,
+    backgroundColor: theme.income,
+    borderColor: theme.income,
   },
   typeText: {
     fontSize: 14,
-    color: colors.text,
+    color: theme.text,
   },
   typeTextSelected: {
     color: 'white',
@@ -224,12 +228,12 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
-    backgroundColor: colors.income,
+    backgroundColor: theme.income,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',

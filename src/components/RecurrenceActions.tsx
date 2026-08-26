@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { t } from '../locales/i18n';
 
 interface RecurrenceActionsProps {
@@ -16,6 +17,9 @@ export const RecurrenceActions: React.FC<RecurrenceActionsProps> = ({
   onSkip,
   compact = false,
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const handleConfirm = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onConfirm();
@@ -46,7 +50,7 @@ export const RecurrenceActions: React.FC<RecurrenceActionsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: 8,
@@ -61,15 +65,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   skipButton: {
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   confirmButton: {
-    backgroundColor: colors.income,
+    backgroundColor: theme.income,
   },
   skipText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: '600',
     fontSize: 13,
   },

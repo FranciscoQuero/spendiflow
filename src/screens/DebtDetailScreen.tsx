@@ -17,7 +17,8 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -27,6 +28,9 @@ type RouteProps = RouteProp<RootStackParamList, 'DebtDetail'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const DebtDetailScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
@@ -68,7 +72,7 @@ export const DebtDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.notFound}>
@@ -143,15 +147,15 @@ export const DebtDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{debt.creditorName}</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={handleEdit} style={styles.backButton}>
-            <Ionicons name="create-outline" size={22} color={colors.text} />
+            <Ionicons name="create-outline" size={22} color={theme.text} />
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.backButton}>
-            <Ionicons name="trash-outline" size={24} color={colors.expense} />
+            <Ionicons name="trash-outline" size={24} color={theme.expense} />
           </Pressable>
         </View>
       </View>
@@ -164,7 +168,7 @@ export const DebtDetailScreen: React.FC = () => {
             <View
               style={[
                 styles.progressCircle,
-                { borderColor: isIOwe ? colors.income : colors.primary },
+                { borderColor: isIOwe ? theme.income : theme.primary },
               ]}
             >
               <Text style={styles.progressPercent}>{progressPercent.toFixed(0)}%</Text>
@@ -176,13 +180,13 @@ export const DebtDetailScreen: React.FC = () => {
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>{t('debts.totalAmount')}</Text>
-              <Text style={[styles.statValue, { color: colors.expense }]}>
+              <Text style={[styles.statValue, { color: theme.expense }]}>
                 {formatCurrency(debt.totalAmount, settings.currencySymbol, locale)}
               </Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statLabel}>{t('accounts.paid')}</Text>
-              <Text style={[styles.statValue, { color: colors.income }]}>
+              <Text style={[styles.statValue, { color: theme.income }]}>
                 {formatCurrency(totalPaid, settings.currencySymbol, locale)}
               </Text>
             </View>
@@ -214,7 +218,7 @@ export const DebtDetailScreen: React.FC = () => {
                   styles.progressFill,
                   {
                     width: `${progressPercent}%`,
-                    backgroundColor: isIOwe ? colors.income : colors.primary,
+                    backgroundColor: isIOwe ? theme.income : theme.primary,
                   },
                 ]}
               />
@@ -242,7 +246,7 @@ export const DebtDetailScreen: React.FC = () => {
             <Pressable
               style={[
                 styles.paymentButton,
-                { backgroundColor: isIOwe ? colors.income : colors.primary },
+                { backgroundColor: isIOwe ? theme.income : theme.primary },
               ]}
               onPress={() => setShowAddModal(true)}
             >
@@ -381,7 +385,7 @@ export const DebtDetailScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -390,10 +394,10 @@ export const DebtDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -402,7 +406,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   headerActions: {
     flexDirection: 'row',
@@ -416,7 +420,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -431,7 +435,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notFoundText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 16,
   },
   summaryCard: {
@@ -445,7 +449,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderWidth: 8,
     justifyContent: 'center',
     alignItems: 'center',
@@ -453,11 +457,11 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   progressLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   statsRow: {
@@ -471,7 +475,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   statValue: {
@@ -486,20 +490,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   breakdownItem: {
     alignItems: 'center',
   },
   breakdownLabel: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   breakdownValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginTop: 2,
   },
   progressBarContainer: {
@@ -508,7 +512,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 12,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -522,18 +526,18 @@ const styles = StyleSheet.create({
   },
   remainingLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   remainingValue: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.expense,
+    color: theme.expense,
     marginTop: 4,
   },
   metaText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   paymentButton: {
@@ -553,12 +557,12 @@ const styles = StyleSheet.create({
   interestRate: {
     marginTop: 16,
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 12,
   },
   historyRow: {
@@ -569,41 +573,41 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   historyKind: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
     textTransform: 'uppercase',
   },
   historyNote: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   historyAmount: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.income,
+    color: theme.income,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 24,
   },
   noteText: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
     lineHeight: 22,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -612,20 +616,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -633,25 +637,25 @@ const styles = StyleSheet.create({
   },
   modalHint: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   kindRow: {
     flexDirection: 'row',
@@ -661,19 +665,19 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     alignItems: 'center',
   },
   kindChipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   kindChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   kindChipTextSelected: {
     color: 'white',

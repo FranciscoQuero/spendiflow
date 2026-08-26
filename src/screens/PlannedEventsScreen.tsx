@@ -21,7 +21,8 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Chip } from '../components/Chip';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDateLong, getDateISO, parseNumber } from '../utils/formatters';
 import { groupPlannedEvents } from '../utils/plannedEvents';
 import { t } from '../locales/i18n';
@@ -40,6 +41,9 @@ const ROW_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
 };
 
 export const PlannedEventsScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const plannedEvents = useStore((state) => state.plannedEvents);
   const bankAccounts = useStore((state) => state.bankAccounts);
@@ -209,7 +213,7 @@ export const PlannedEventsScreen: React.FC = () => {
           <Ionicons
             name={item.done ? 'checkmark-circle' : 'ellipse-outline'}
             size={26}
-            color={item.done ? colors.income : colors.textSecondary}
+            color={item.done ? theme.income : theme.textSecondary}
           />
         </Pressable>
 
@@ -254,7 +258,7 @@ export const PlannedEventsScreen: React.FC = () => {
           <Ionicons
             name={showCompleted ? 'chevron-up' : 'chevron-down'}
             size={18}
-            color={colors.textSecondary}
+            color={theme.textSecondary}
           />
         </Pressable>
       );
@@ -275,7 +279,7 @@ export const PlannedEventsScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={64} color={colors.textSecondary} />
+      <Ionicons name="calendar-outline" size={64} color={theme.textSecondary} />
       <Text style={styles.emptyTitle}>{t('plannedEvents.emptyTitle')}</Text>
       <Text style={styles.emptyDescription}>{t('plannedEvents.emptyDescription')}</Text>
       <Pressable style={styles.emptyButton} onPress={openCreateModal}>
@@ -288,7 +292,7 @@ export const PlannedEventsScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('plannedEvents.title')}</Text>
         <View style={styles.backButton} />
@@ -350,7 +354,7 @@ export const PlannedEventsScreen: React.FC = () => {
                   value={name}
                   onChangeText={setName}
                   placeholder={t('plannedEvents.namePlaceholder')}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.textSecondary}
                 />
               </View>
 
@@ -365,7 +369,7 @@ export const PlannedEventsScreen: React.FC = () => {
                   }}
                 >
                   <Text style={styles.dateText}>{formatDateLong(date, locale)}</Text>
-                  <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+                  <Ionicons name="calendar-outline" size={20} color={theme.textSecondary} />
                 </Pressable>
                 {showDatePicker && (
                   <View style={Platform.OS === 'ios' ? styles.iosPickerContainer : undefined}>
@@ -395,7 +399,7 @@ export const PlannedEventsScreen: React.FC = () => {
                   value={estimatedAmount}
                   onChangeText={setEstimatedAmount}
                   placeholder="0,00"
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.textSecondary}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -428,7 +432,7 @@ export const PlannedEventsScreen: React.FC = () => {
                   value={note}
                   onChangeText={setNote}
                   placeholder={t('plannedEvents.notePlaceholder')}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor={theme.textSecondary}
                 />
               </View>
             </ScrollView>
@@ -439,10 +443,10 @@ export const PlannedEventsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -451,7 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -462,7 +466,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   listContent: {
     padding: 20,
@@ -482,20 +486,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionTitleOverdue: {
-    color: colors.warning,
+    color: theme.warning,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 16,
-    shadowColor: colors.shadow,
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -503,7 +507,7 @@ const styles = StyleSheet.create({
   },
   rowOverdue: {
     borderWidth: 1.5,
-    borderColor: colors.warning,
+    borderColor: theme.warning,
   },
   rowCompleted: {
     opacity: 0.55,
@@ -521,16 +525,16 @@ const styles = StyleSheet.create({
   rowName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   rowMeta: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   rowNote: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
     fontStyle: 'italic',
   },
@@ -540,10 +544,10 @@ const styles = StyleSheet.create({
   rowAmount: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   rowAmountOverdue: {
-    color: colors.warning,
+    color: theme.warning,
   },
   emptyContainer: {
     flex: 1,
@@ -555,20 +559,20 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
     marginTop: 16,
     textAlign: 'center',
   },
   emptyDescription: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 8,
     textAlign: 'center',
     lineHeight: 20,
   },
   emptyButton: {
     marginTop: 24,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 16,
@@ -585,7 +589,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -596,7 +600,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalKeyboard: {
     flex: 1,
@@ -608,20 +612,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -637,19 +641,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   chipContainer: {
     flexDirection: 'row',
@@ -659,32 +663,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   dateText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
   },
   iosPickerContainer: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     overflow: 'hidden',
   },
   doneButton: {
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   doneButtonText: {
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
     fontSize: 16,
   },

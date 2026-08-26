@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,7 +6,8 @@ import {
   Pressable,
   PressableProps,
 } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 
 interface CardProps extends Omit<PressableProps, 'style'> {
   children: React.ReactNode;
@@ -21,6 +22,9 @@ export const Card: React.FC<CardProps> = ({
   onPress,
   ...props
 }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   if (pressable && onPress) {
     return (
       <Pressable
@@ -40,12 +44,12 @@ export const Card: React.FC<CardProps> = ({
   return <View style={[styles.card, style]}>{children}</View>;
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 16,
     padding: 16,
-    shadowColor: colors.shadow,
+    shadowColor: theme.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

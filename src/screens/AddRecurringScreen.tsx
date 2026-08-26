@@ -23,7 +23,8 @@ import { CategoryChip } from '../components/CategoryChip';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Chip } from '../components/Chip';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO, formatDateLong } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -34,6 +35,9 @@ type RouteProps = RouteProp<RootStackParamList, 'AddRecurring'>;
 const FREQUENCIES: RecurrenceFrequency[] = ['weekly', 'monthly', 'quarterly', 'yearly'];
 
 export const AddRecurringScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const ruleId = route.params?.ruleId;
@@ -212,7 +216,7 @@ export const AddRecurringScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={colors.text} />
+            <Ionicons name="close" size={28} color={theme.text} />
           </Pressable>
           <Text style={styles.title}>
             {isEditing ? t('recurring.editTitle') : t('recurring.addTitle')}
@@ -234,7 +238,7 @@ export const AddRecurringScreen: React.FC = () => {
               value={name}
               onChangeText={setName}
               placeholder={t('recurring.namePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
 
@@ -267,7 +271,7 @@ export const AddRecurringScreen: React.FC = () => {
               value={concept}
               onChangeText={setConcept}
               placeholder={t('recurring.conceptPlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
 
@@ -409,7 +413,7 @@ export const AddRecurringScreen: React.FC = () => {
               }}
             >
               <Text style={styles.dateText}>{formatDateLong(nextDueDate, locale)}</Text>
-              <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+              <Ionicons name="calendar-outline" size={20} color={theme.textSecondary} />
             </Pressable>
             {showDatePicker && (
               <View style={Platform.OS === 'ios' ? styles.iosPickerContainer : undefined}>
@@ -440,8 +444,8 @@ export const AddRecurringScreen: React.FC = () => {
                 Haptics.selectionAsync();
                 setActive(value);
               }}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
-              thumbColor={active ? colors.primary : '#f4f3f4'}
+              trackColor={{ false: theme.border, true: theme.primaryLight }}
+              thumbColor={active ? theme.primary : '#f4f3f4'}
             />
           </View>
         </ScrollView>
@@ -469,10 +473,10 @@ export const AddRecurringScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -510,19 +514,19 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   chipContainer: {
     flexDirection: 'row',
@@ -530,39 +534,39 @@ const styles = StyleSheet.create({
   },
   warningText: {
     fontSize: 13,
-    color: colors.warning,
+    color: theme.warning,
     marginBottom: 16,
   },
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   dateText: {
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
   },
   iosPickerContainer: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     overflow: 'hidden',
   },
   doneButton: {
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   doneButtonText: {
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -574,9 +578,9 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
     borderRadius: 16,
@@ -584,13 +588,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   expenseButton: {
-    backgroundColor: colors.expense,
+    backgroundColor: theme.expense,
   },
   incomeButton: {
-    backgroundColor: colors.income,
+    backgroundColor: theme.income,
   },
   transferButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   disabledButton: {
     opacity: 0.5,

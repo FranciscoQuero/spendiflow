@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { parseNumber } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -23,6 +24,9 @@ import { DebtDirection } from '../types';
 type RouteProps = RouteProp<RootStackParamList, 'AddDebt'>;
 
 export const AddDebtScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const debtId = route.params?.debtId;
@@ -105,7 +109,7 @@ export const AddDebtScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={theme.text} />
         </Pressable>
         <Text style={styles.title}>
           {isEditMode ? t('debts.editDebt') : t('accounts.addDebt')}
@@ -156,7 +160,7 @@ export const AddDebtScreen: React.FC = () => {
           placeholder={
             isIOwe ? t('debts.creditorNamePlaceholder') : t('debts.debtorNamePlaceholder')
           }
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           autoFocus={!isEditMode}
         />
 
@@ -171,7 +175,7 @@ export const AddDebtScreen: React.FC = () => {
           value={monthlyPayment}
           onChangeText={setMonthlyPayment}
           placeholder={t('debts.monthlyPaymentPlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           keyboardType="decimal-pad"
         />
 
@@ -182,7 +186,7 @@ export const AddDebtScreen: React.FC = () => {
           value={interestRate}
           onChangeText={setInterestRate}
           placeholder={t('debts.interestRatePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           keyboardType="decimal-pad"
         />
 
@@ -193,7 +197,7 @@ export const AddDebtScreen: React.FC = () => {
           value={note}
           onChangeText={setNote}
           placeholder={t('addTransaction.notePlaceholder')}
-          placeholderTextColor={colors.textSecondary}
+          placeholderTextColor={theme.textSecondary}
           multiline
         />
       </ScrollView>
@@ -212,10 +216,10 @@ export const AddDebtScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   closeButton: {
     width: 40,
@@ -235,7 +239,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
@@ -246,7 +250,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
@@ -261,35 +265,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     alignItems: 'center',
   },
   chipSelectedExpense: {
-    backgroundColor: colors.expense,
-    borderColor: colors.expense,
+    backgroundColor: theme.expense,
+    borderColor: theme.expense,
   },
   chipSelectedIncome: {
-    backgroundColor: colors.income,
-    borderColor: colors.income,
+    backgroundColor: theme.income,
+    borderColor: theme.income,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   chipTextSelected: {
     color: 'white',
   },
   textInput: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
   noteInput: {
     minHeight: 80,
@@ -298,12 +302,12 @@ const styles = StyleSheet.create({
   footer: {
     padding: 20,
     paddingBottom: 34,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: theme.border,
   },
   saveButton: {
-    backgroundColor: colors.expense,
+    backgroundColor: theme.expense,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',

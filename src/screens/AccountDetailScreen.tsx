@@ -22,7 +22,8 @@ import {
   getAvailableBalance,
   getProvisionBalance,
 } from '../hooks/useAccounts';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -46,6 +47,9 @@ const roleLabel = (role: string): string => {
 };
 
 export const AccountDetailScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
@@ -81,7 +85,7 @@ export const AccountDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.notFound}>
@@ -160,14 +164,14 @@ export const AccountDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{account.name}</Text>
         <Pressable
           onPress={() => navigation.navigate('AddAccount', { accountId: id })}
           style={styles.backButton}
         >
-          <Ionicons name="create-outline" size={22} color={colors.text} />
+          <Ionicons name="create-outline" size={22} color={theme.text} />
         </Pressable>
       </View>
 
@@ -233,7 +237,7 @@ export const AccountDetailScreen: React.FC = () => {
             style={styles.sectionAddButton}
             onPress={() => navigation.navigate('AddProvision', { accountId: id })}
           >
-            <Ionicons name="add-circle" size={26} color={colors.primary} />
+            <Ionicons name="add-circle" size={26} color={theme.primary} />
           </Pressable>
         </View>
         <Card>
@@ -322,15 +326,15 @@ export const AccountDetailScreen: React.FC = () => {
             <Ionicons
               name={account.archived ? 'archive' : 'archive-outline'}
               size={18}
-              color={colors.textSecondary}
+              color={theme.textSecondary}
             />
             <Text style={styles.footerButtonText}>
               {account.archived ? t('accounts.unarchiveAccount') : t('accounts.archiveAccount')}
             </Text>
           </Pressable>
           <Pressable style={styles.footerButton} onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={18} color={colors.expense} />
-            <Text style={[styles.footerButtonText, { color: colors.expense }]}>
+            <Ionicons name="trash-outline" size={18} color={theme.expense} />
+            <Text style={[styles.footerButtonText, { color: theme.expense }]}>
               {t('common.delete')}
             </Text>
           </Pressable>
@@ -357,7 +361,7 @@ export const AccountDetailScreen: React.FC = () => {
               value={note}
               onChangeText={setNote}
               placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </SafeAreaView>
@@ -366,10 +370,10 @@ export const AccountDetailScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -378,7 +382,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -389,7 +393,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -403,7 +407,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notFoundText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 16,
   },
   balanceCard: {
@@ -411,7 +415,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   roleBadge: {
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -420,35 +424,35 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
     textTransform: 'uppercase',
   },
   bankName: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
   },
   balanceLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     textTransform: 'uppercase',
   },
   balanceValue: {
     fontSize: 36,
     fontWeight: '700',
-    color: colors.primary,
+    color: theme.primary,
     marginVertical: 8,
   },
   availableText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
   },
   updateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
@@ -468,12 +472,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 12,
   },
   sectionAddButton: {
@@ -509,11 +513,11 @@ const styles = StyleSheet.create({
   provisionName: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   miniProgressBar: {
     height: 4,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     borderRadius: 2,
     marginTop: 6,
     overflow: 'hidden',
@@ -525,7 +529,7 @@ const styles = StyleSheet.create({
   provisionBalance: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   historyRow: {
     flexDirection: 'row',
@@ -535,25 +539,25 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   historyNote: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   historyAmount: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.primary,
+    color: theme.primary,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
   },
   emptyText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 24,
   },
   footerActions: {
@@ -572,12 +576,12 @@ const styles = StyleSheet.create({
   },
   footerButtonText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: '500',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -586,20 +590,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   cancelText: {
     fontSize: 16,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   modalContent: {
@@ -608,18 +612,18 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 8,
     marginTop: 16,
     textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
   },
 });

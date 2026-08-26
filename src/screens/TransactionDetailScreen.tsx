@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDateLong } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -22,6 +23,9 @@ type RouteProps = RouteProp<RootStackParamList, 'TransactionDetail'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const TransactionDetailScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
@@ -45,7 +49,7 @@ export const TransactionDetailScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </Pressable>
         </View>
         <View style={styles.notFound}>
@@ -116,15 +120,15 @@ export const TransactionDetailScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{headerTitle}</Text>
         <View style={styles.headerActions}>
           <Pressable onPress={handleEdit} style={styles.backButton}>
-            <Ionicons name="pencil-outline" size={22} color={colors.text} />
+            <Ionicons name="pencil-outline" size={22} color={theme.text} />
           </Pressable>
           <Pressable onPress={handleDelete} style={styles.backButton}>
-            <Ionicons name="trash-outline" size={22} color={colors.expense} />
+            <Ionicons name="trash-outline" size={22} color={theme.expense} />
           </Pressable>
         </View>
       </View>
@@ -229,20 +233,25 @@ const DetailRow = ({
   label: string;
   value: string;
   color?: string;
-}) => (
-  <View style={styles.detailRow}>
-    <View style={styles.detailLeft}>
-      <Ionicons name={icon} size={20} color={colors.textSecondary} />
-      <Text style={styles.detailLabel}>{label}</Text>
-    </View>
-    <Text style={[styles.detailValue, color && { color }]}>{value}</Text>
-  </View>
-);
+}) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
-const styles = StyleSheet.create({
+  return (
+    <View style={styles.detailRow}>
+      <View style={styles.detailLeft}>
+        <Ionicons name={icon} size={20} color={theme.textSecondary} />
+        <Text style={styles.detailLabel}>{label}</Text>
+      </View>
+      <Text style={[styles.detailValue, color && { color }]}>{value}</Text>
+    </View>
+  );
+};
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -251,7 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   backButton: {
     width: 40,
@@ -265,7 +274,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   container: {
     flex: 1,
@@ -279,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notFoundText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     fontSize: 16,
   },
   amountContainer: {
@@ -291,13 +300,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   expenseText: {
-    color: colors.expense,
+    color: theme.expense,
   },
   incomeText: {
-    color: colors.income,
+    color: theme.income,
   },
   neutralText: {
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   detailsCard: {
     padding: 0,
@@ -315,18 +324,18 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   detailValue: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.text,
+    color: theme.text,
     flex: 1,
     textAlign: 'right',
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: theme.border,
     marginLeft: 48,
   },
 });

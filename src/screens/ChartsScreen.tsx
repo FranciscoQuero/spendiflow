@@ -13,7 +13,8 @@ import { Card } from '../components/Card';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useTransactions } from '../hooks/useTransactions';
 import { useStore } from '../store/useStore';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/useTheme';
+import { Theme, hexToRgba } from '../theme/colors';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
 import { ChartPeriod, TransactionScope } from '../types';
 import { t } from '../locales/i18n';
@@ -24,6 +25,9 @@ const CHART_WIDTH = SCREEN_WIDTH - 40;
 type ScopeFilter = TransactionScope | 'all';
 
 export const ChartsScreen: React.FC = () => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const [period, setPeriod] = useState<ChartPeriod>('month');
   const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
   const settings = useStore((state) => state.settings);
@@ -43,16 +47,16 @@ export const ChartsScreen: React.FC = () => {
 
   const pieData = useMemo(() => {
     if (summary.byCategory.length === 0) {
-      return [{ name: 'No data', population: 1, color: colors.textSecondary, legendFontColor: colors.textSecondary }];
+      return [{ name: t('charts.noData'), population: 1, color: theme.textSecondary, legendFontColor: theme.textSecondary }];
     }
     return summary.byCategory.map((cat) => ({
       name: cat.categoryName,
       population: cat.total,
       color: cat.color,
-      legendFontColor: colors.text,
+      legendFontColor: theme.text,
       legendFontSize: 12,
     }));
-  }, [summary.byCategory]);
+  }, [summary.byCategory, theme]);
 
   const barData = useMemo(() => {
     if (dailyTotals.length === 0) {
@@ -144,7 +148,7 @@ export const ChartsScreen: React.FC = () => {
                 width={CHART_WIDTH - 32}
                 height={200}
                 chartConfig={{
-                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  color: (opacity = 1) => hexToRgba(theme.text, opacity),
                 }}
                 accessor="population"
                 backgroundColor="transparent"
@@ -190,14 +194,14 @@ export const ChartsScreen: React.FC = () => {
               width={CHART_WIDTH - 32}
               height={200}
               yAxisLabel=""
-              yAxisSuffix="€"
+              yAxisSuffix={settings.currencySymbol}
               chartConfig={{
-                backgroundColor: colors.card,
-                backgroundGradientFrom: colors.card,
-                backgroundGradientTo: colors.card,
+                backgroundColor: theme.card,
+                backgroundGradientFrom: theme.card,
+                backgroundGradientTo: theme.card,
                 decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+                color: (opacity = 1) => hexToRgba(theme.expense, opacity),
+                labelColor: (opacity = 1) => hexToRgba(theme.textSecondary, opacity),
                 style: {
                   borderRadius: 16,
                 },
@@ -216,10 +220,10 @@ export const ChartsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.background,
   },
   container: {
     flex: 1,
@@ -234,11 +238,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.text,
+    color: theme.text,
   },
   periodSelector: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
@@ -250,12 +254,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodTabActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: theme.primary,
   },
   periodTabText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
   },
   periodTabTextActive: {
     color: 'white',
@@ -269,13 +273,13 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 14,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: 4,
   },
   totalValue: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.expense,
+    color: theme.expense,
   },
   chartCard: {
     marginBottom: 20,
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 16,
   },
   pieContainer: {
@@ -291,7 +295,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     textAlign: 'center',
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     paddingVertical: 40,
   },
   categoryRow: {
@@ -300,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: theme.border,
   },
   categoryInfo: {
     flexDirection: 'row',
@@ -314,7 +318,7 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 15,
-    color: colors.text,
+    color: theme.text,
   },
   categoryValues: {
     alignItems: 'flex-end',
@@ -322,11 +326,11 @@ const styles = StyleSheet.create({
   categoryAmount: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text,
+    color: theme.text,
   },
   categoryPercent: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: theme.textSecondary,
     marginTop: 2,
   },
   barChart: {
