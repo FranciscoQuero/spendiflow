@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
@@ -20,11 +21,13 @@ import { colors } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
+import { PaymentKind } from '../types';
 
 type RouteProps = RouteProp<RootStackParamList, 'DebtDetail'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const DebtDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
 
@@ -35,6 +38,7 @@ export const DebtDetailScreen: React.FC = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentKind, setPaymentKind] = useState<PaymentKind>('installment');
   const [note, setNote] = useState('');
 
   const debt = debts.find((d) => d.id === id);
@@ -43,6 +47,20 @@ export const DebtDetailScreen: React.FC = () => {
   const totalPaid = useMemo(() => {
     if (!debt) return 0;
     return debt.payments.reduce((sum, p) => sum + p.amount, 0);
+  }, [debt]);
+
+  const totalInstallments = useMemo(() => {
+    if (!debt) return 0;
+    return debt.payments
+      .filter((p) => p.kind === 'installment')
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [debt]);
+
+  const totalExtra = useMemo(() => {
+    if (!debt) return 0;
+    return debt.payments
+      .filter((p) => p.kind === 'extra')
+      .reduce((sum, p) => sum + p.amount, 0);
   }, [debt]);
 
   if (!debt) {
@@ -54,19 +72,20 @@ export const DebtDetailScreen: React.FC = () => {
           </Pressable>
         </View>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Debt not found</Text>
+          <Text style={styles.notFoundText}>{t('debts.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const remaining = debt.totalAmount - totalPaid;
-  const progressPercent = (totalPaid / debt.totalAmount) * 100;
+  const isIOwe = debt.direction === 'iOwe';
+  const remaining = Math.max(debt.totalAmount - totalPaid, 0);
+  const progressPercent = debt.totalAmount > 0 ? (totalPaid / debt.totalAmount) * 100 : 0;
 
   const handleDelete = () => {
     Alert.alert(
       t('common.delete'),
-      `Delete "${debt.creditorName}"?`,
+      t('debts.deleteConfirm', { name: debt.creditorName }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -81,15 +100,19 @@ export const DebtDetailScreen: React.FC = () => {
     );
   };
 
+  const handleEdit = () => {
+    navigation.navigate('AddDebt', { debtId: id });
+  };
+
   const handleAddPayment = () => {
     const parsedAmount = parseNumber(paymentAmount);
     if (parsedAmount <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
       return;
     }
 
     if (parsedAmount > remaining) {
-      Alert.alert(t('common.error'), 'Payment exceeds remaining amount');
+      Alert.alert(t('common.error'), t('debts.paymentExceedsRemaining'));
       return;
     }
 
@@ -98,16 +121,20 @@ export const DebtDetailScreen: React.FC = () => {
       amount: parsedAmount,
       date: getDateISO(),
       note: note.trim() || undefined,
-      kind: 'installment',
+      kind: paymentKind,
     });
 
     setPaymentAmount('');
     setNote('');
+    setPaymentKind('installment');
     setShowAddModal(false);
 
-    // Check if debt is fully paid
+    // Check if debt is fully paid off
     if (parsedAmount >= remaining) {
-      Alert.alert('Congratulations!', 'You have fully paid off this debt!');
+      Alert.alert(
+        t('common.success'),
+        isIOwe ? t('debts.congratsPay') : t('debts.congratsCollect')
+      );
     }
   };
 
@@ -119,9 +146,14 @@ export const DebtDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>{debt.creditorName}</Text>
-        <Pressable onPress={handleDelete} style={styles.backButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable onPress={handleEdit} style={styles.backButton}>
+            <Ionicons name="create-outline" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable onPress={handleDelete} style={styles.backButton}>
+            <Ionicons name="trash-outline" size={24} color={colors.expense} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -129,7 +161,12 @@ export const DebtDetailScreen: React.FC = () => {
         <Card style={styles.summaryCard}>
           {/* Progress Circle */}
           <View style={styles.progressCircleContainer}>
-            <View style={styles.progressCircle}>
+            <View
+              style={[
+                styles.progressCircle,
+                { borderColor: isIOwe ? colors.income : colors.primary },
+              ]}
+            >
               <Text style={styles.progressPercent}>{progressPercent.toFixed(0)}%</Text>
               <Text style={styles.progressLabel}>{t('accounts.paid')}</Text>
             </View>
@@ -138,7 +175,7 @@ export const DebtDetailScreen: React.FC = () => {
           {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>{t('accounts.totalDebt')}</Text>
+              <Text style={styles.statLabel}>{t('debts.totalAmount')}</Text>
               <Text style={[styles.statValue, { color: colors.expense }]}>
                 {formatCurrency(debt.totalAmount, settings.currencySymbol, locale)}
               </Text>
@@ -151,42 +188,82 @@ export const DebtDetailScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* Breakdown: installments vs extra */}
+          {(totalInstallments > 0 || totalExtra > 0) && (
+            <View style={styles.breakdownRow}>
+              <View style={styles.breakdownItem}>
+                <Text style={styles.breakdownLabel}>{t('debts.totalInstallments')}</Text>
+                <Text style={styles.breakdownValue}>
+                  {formatCurrency(totalInstallments, settings.currencySymbol, locale)}
+                </Text>
+              </View>
+              <View style={styles.breakdownItem}>
+                <Text style={styles.breakdownLabel}>{t('debts.totalExtra')}</Text>
+                <Text style={styles.breakdownValue}>
+                  {formatCurrency(totalExtra, settings.currencySymbol, locale)}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Progress Bar */}
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${progressPercent}%`,
+                    backgroundColor: isIOwe ? colors.income : colors.primary,
+                  },
+                ]}
+              />
             </View>
           </View>
 
           {/* Remaining */}
           <View style={styles.remainingContainer}>
-            <Text style={styles.remainingLabel}>{t('accounts.remaining')}</Text>
+            <Text style={styles.remainingLabel}>
+              {isIOwe ? t('debts.pendingToPay') : t('debts.pendingToCollect')}
+            </Text>
             <Text style={styles.remainingValue}>
               {formatCurrency(remaining, settings.currencySymbol, locale)}
             </Text>
           </View>
 
+          {debt.monthlyPayment !== undefined && (
+            <Text style={styles.metaText}>
+              {t('debts.monthlyPayment')}:{' '}
+              {formatCurrency(debt.monthlyPayment, settings.currencySymbol, locale)}
+            </Text>
+          )}
+
           {remaining > 0 && (
             <Pressable
-              style={styles.paymentButton}
+              style={[
+                styles.paymentButton,
+                { backgroundColor: isIOwe ? colors.income : colors.primary },
+              ]}
               onPress={() => setShowAddModal(true)}
             >
               <Ionicons name="card" size={20} color="white" />
               <Text style={styles.paymentButtonText}>
-                {t('accounts.makePayment')}
+                {isIOwe ? t('debts.addPayment') : t('debts.registerCollection')}
               </Text>
             </Pressable>
           )}
 
-          {debt.interestRate && (
+          {debt.interestRate !== undefined && (
             <Text style={styles.interestRate}>
-              Interest Rate: {debt.interestRate}%
+              {t('debts.interestRate')}: {debt.interestRate}%
             </Text>
           )}
         </Card>
 
         {/* Payment History */}
-        <Text style={styles.sectionTitle}>Payment History</Text>
+        <Text style={styles.sectionTitle}>
+          {isIOwe ? t('debts.paymentHistory') : t('debts.collectionHistory')}
+        </Text>
         <Card>
           {debt.payments.length > 0 ? (
             [...debt.payments].reverse().map((payment, index) => (
@@ -195,6 +272,11 @@ export const DebtDetailScreen: React.FC = () => {
                   <View>
                     <Text style={styles.historyDate}>
                       {formatDate(payment.date, locale)}
+                    </Text>
+                    <Text style={styles.historyKind}>
+                      {payment.kind === 'installment'
+                        ? t('debts.installment')
+                        : t('debts.extra')}
                     </Text>
                     {payment.note && (
                       <Text style={styles.historyNote}>{payment.note}</Text>
@@ -210,13 +292,15 @@ export const DebtDetailScreen: React.FC = () => {
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No payments yet</Text>
+            <Text style={styles.emptyText}>
+              {isIOwe ? t('debts.noPayments') : t('debts.noCollections')}
+            </Text>
           )}
         </Card>
 
         {debt.note && (
           <>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t('debts.notes')}</Text>
             <Card>
               <Text style={styles.noteText}>{debt.note}</Text>
             </Card>
@@ -231,20 +315,66 @@ export const DebtDetailScreen: React.FC = () => {
             <Pressable onPress={() => setShowAddModal(false)}>
               <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Text style={styles.modalTitle}>{t('accounts.makePayment')}</Text>
+            <Text style={styles.modalTitle}>
+              {isIOwe ? t('debts.addPayment') : t('debts.registerCollection')}
+            </Text>
             <Pressable onPress={handleAddPayment}>
               <Text style={styles.saveText}>{t('common.save')}</Text>
             </Pressable>
           </View>
           <View style={styles.modalContent}>
             <Text style={styles.modalHint}>
-              Remaining: {formatCurrency(remaining, settings.currencySymbol, locale)}
+              {(isIOwe ? t('debts.pendingToPay') : t('debts.pendingToCollect'))}:{' '}
+              {formatCurrency(remaining, settings.currencySymbol, locale)}
             </Text>
             <AmountInput
               value={paymentAmount}
               onChangeText={setPaymentAmount}
               type="expense"
             />
+
+            <Text style={styles.inputLabel}>{t('debts.paymentKind')}</Text>
+            <View style={styles.kindRow}>
+              <Pressable
+                style={[
+                  styles.kindChip,
+                  paymentKind === 'installment' && styles.kindChipSelected,
+                ]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setPaymentKind('installment');
+                }}
+              >
+                <Text
+                  style={[
+                    styles.kindChipText,
+                    paymentKind === 'installment' && styles.kindChipTextSelected,
+                  ]}
+                >
+                  {t('debts.installment')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.kindChip,
+                  paymentKind === 'extra' && styles.kindChipSelected,
+                ]}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setPaymentKind('extra');
+                }}
+              >
+                <Text
+                  style={[
+                    styles.kindChipText,
+                    paymentKind === 'extra' && styles.kindChipTextSelected,
+                  ]}
+                >
+                  {t('debts.extra')}
+                </Text>
+              </Pressable>
+            </View>
+
             <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
             <TextInput
               style={styles.input}
@@ -273,6 +403,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  headerActions: {
+    flexDirection: 'row',
   },
   backButton: {
     width: 40,
@@ -314,7 +447,6 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: colors.background,
     borderWidth: 8,
-    borderColor: colors.income,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -347,6 +479,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 4,
   },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  breakdownItem: {
+    alignItems: 'center',
+  },
+  breakdownLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+  },
+  breakdownValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+    marginTop: 2,
+  },
   progressBarContainer: {
     width: '100%',
     marginBottom: 16,
@@ -359,7 +514,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.income,
     borderRadius: 6,
   },
   remainingContainer: {
@@ -377,11 +531,15 @@ const styles = StyleSheet.create({
     color: colors.expense,
     marginTop: 4,
   },
+  metaText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
   paymentButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.income,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
@@ -412,6 +570,12 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: 15,
     color: colors.text,
+  },
+  historyKind: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
   historyNote: {
     fontSize: 13,
@@ -488,5 +652,30 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  kindRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  kindChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  kindChipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  kindChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  kindChipTextSelected: {
+    color: 'white',
   },
 });
