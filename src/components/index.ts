@@ -9,3 +9,4 @@ export { RecurrenceActions } from './RecurrenceActions';
 export { FormScrollView } from './FormScrollView';
 export { TintedIcon } from './TintedIcon';
 export { Badge } from './Badge';
+export { OptionSheet } from './OptionSheet';

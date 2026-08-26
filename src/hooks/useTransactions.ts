@@ -7,6 +7,7 @@ import {
   ChartPeriod,
   TransactionScope,
 } from '../types';
+import { getPeriodRange } from '../utils/periods';
 
 /**
  * Calcula el resumen de un período a partir de una lista de transacciones ya
@@ -83,44 +84,32 @@ export const useTransactions = () => {
   const transactions = useStore((state) => state.transactions);
   const categories = useStore((state) => state.categories);
 
+  /**
+   * Transacciones del período de la granularidad dada que CONTIENE `refDate`
+   * (semana lunes-domingo; mes, trimestre y año naturales — ver
+   * `getPeriodRange` en `utils/periods.ts`). Sin `refDate`, usa el período
+   * actual (hoy).
+   */
   const getTransactionsByPeriod = (
     period: ChartPeriod,
-    referenceDate: Date = new Date(),
+    refDate: Date = new Date(),
     scope?: TransactionScope
   ): Transaction[] => {
-    const now = referenceDate;
-    let startDate: Date;
-
-    switch (period) {
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'quarter':
-        const quarter = Math.floor(now.getMonth() / 3);
-        startDate = new Date(now.getFullYear(), quarter * 3, 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-    }
+    const { start, end } = getPeriodRange(period, refDate);
 
     return transactions.filter((t) => {
       const transactionDate = new Date(t.date);
-      const inRange = transactionDate >= startDate && transactionDate <= now;
+      const inRange = transactionDate >= start && transactionDate <= end;
       return inRange && (scope === undefined || t.scope === scope);
     });
   };
 
   const getPeriodSummary = (
     period: ChartPeriod,
-    referenceDate?: Date,
+    refDate?: Date,
     scope?: TransactionScope
   ): PeriodSummary => {
-    const periodTransactions = getTransactionsByPeriod(period, referenceDate, scope);
+    const periodTransactions = getTransactionsByPeriod(period, refDate, scope);
     return computePeriodSummary(periodTransactions, categories);
   };
 
@@ -139,9 +128,10 @@ export const useTransactions = () => {
   const getDailyTotals = (
     period: ChartPeriod,
     type: 'expense' | 'income' = 'expense',
-    scope?: TransactionScope
+    scope?: TransactionScope,
+    refDate?: Date
   ): { date: string; total: number }[] => {
-    const periodTransactions = getTransactionsByPeriod(period, undefined, scope);
+    const periodTransactions = getTransactionsByPeriod(period, refDate, scope);
     return computeDailyTotals(periodTransactions, type);
   };
 
