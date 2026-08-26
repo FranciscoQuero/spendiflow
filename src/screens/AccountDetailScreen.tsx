@@ -17,6 +17,8 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { FormScrollView } from '../components/FormScrollView';
+import { Badge } from '../components/Badge';
+import { TintedIcon } from '../components/TintedIcon';
 import { useStore } from '../store/useStore';
 import {
   getAccountBalance,
@@ -179,9 +181,7 @@ export const AccountDetailScreen: React.FC = () => {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Current Balance */}
         <Card style={styles.balanceCard}>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{roleLabel(account.role)}</Text>
-          </View>
+          <Badge label={roleLabel(account.role)} color={theme.primary} style={styles.roleBadgeSpacing} />
           <Text style={styles.bankName}>{account.bankName}</Text>
           <Text style={styles.balanceLabel}>{t('accounts.balance')}</Text>
           <Text style={styles.balanceValue}>
@@ -257,15 +257,12 @@ export const AccountDetailScreen: React.FC = () => {
                       navigation.navigate('ProvisionDetail', { provisionId: provision.id })
                     }
                   >
-                    <View
-                      style={[styles.provisionIcon, { backgroundColor: provision.color }]}
-                    >
-                      <Ionicons
-                        name={provision.icon as keyof typeof Ionicons.glyphMap}
-                        size={16}
-                        color="white"
-                      />
-                    </View>
+                    <TintedIcon
+                      name={provision.icon as keyof typeof Ionicons.glyphMap}
+                      color={provision.color}
+                      size={32}
+                      iconSize={16}
+                    />
                     <View style={styles.provisionInfo}>
                       <Text style={styles.provisionName}>{provision.name}</Text>
                       {progress !== undefined && (
@@ -420,18 +417,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  roleBadge: {
-    backgroundColor: theme.background,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  roleBadgeSpacing: {
     marginBottom: 8,
-  },
-  roleBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.primary,
-    textTransform: 'uppercase',
   },
   bankName: {
     fontSize: 14,
@@ -445,9 +432,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   balanceValue: {
     fontSize: 36,
-    fontWeight: '700',
+    fontWeight: '800',
     color: theme.primary,
     marginVertical: 8,
+    fontVariant: ['tabular-nums'],
   },
   availableText: {
     fontSize: 13,
@@ -505,13 +493,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  provisionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   provisionInfo: {
     flex: 1,
     marginLeft: 12,
@@ -536,6 +517,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: theme.text,
+    fontVariant: ['tabular-nums'],
   },
   historyRow: {
     flexDirection: 'row',
@@ -556,6 +538,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.primary,
+    fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,

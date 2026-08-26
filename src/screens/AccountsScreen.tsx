@@ -11,6 +11,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
+import { TintedIcon } from '../components/TintedIcon';
+import { Badge } from '../components/Badge';
 import { useStore } from '../store/useStore';
 import {
   getAccountBalance,
@@ -117,16 +119,12 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('AccountDetail', { id: account.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.primary }]}>
-            <Ionicons name="wallet" size={20} color="white" />
-          </View>
+          <TintedIcon name="wallet" color={theme.primary} />
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{account.name}</Text>
             <Text style={styles.itemSubtitle}>{account.bankName}</Text>
           </View>
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{roleLabel(account.role)}</Text>
-          </View>
+          <Badge label={roleLabel(account.role)} color={theme.primary} />
         </View>
         <View style={styles.itemFooter}>
           <Text style={styles.balanceLabel}>{t('accounts.balance')}</Text>
@@ -194,9 +192,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('InvestmentDetail', { id: investment.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.income }]}>
-            <Ionicons name="trending-up" size={20} color="white" />
-          </View>
+          <TintedIcon name="trending-up" color={theme.income} />
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{investment.name}</Text>
             <Text style={styles.itemSubtitle}>{t(investmentTypeI18nKey(investment.type))}</Text>
@@ -231,9 +227,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('DebtDetail', { id: debt.id })}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: accentColor }]}>
-            <Ionicons name="card" size={20} color="white" />
-          </View>
+          <TintedIcon name="card" color={accentColor} />
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{debt.creditorName}</Text>
             <Text style={styles.itemSubtitle}>
@@ -473,6 +467,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   summaryValue: {
     fontSize: 20,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -504,13 +499,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   itemInfo: {
     marginLeft: 12,
     flex: 1,
@@ -525,18 +513,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.textSecondary,
     marginTop: 2,
   },
-  roleBadge: {
-    backgroundColor: theme.background,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  roleBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: theme.primary,
-    textTransform: 'uppercase',
-  },
   itemFooter: {},
   balanceLabel: {
     fontSize: 12,
@@ -548,6 +524,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.primary,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   secondaryText: {
     fontSize: 12,
@@ -584,6 +561,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   provisionChipBalance: {
     fontSize: 11,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   provisionAddChip: {
     width: 24,

@@ -431,6 +431,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   returnContainer: {
     alignItems: 'center',
@@ -446,8 +447,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   returnValue: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   positiveReturn: {
     color: theme.income,
@@ -499,6 +501,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.income,
+    fontVariant: ['tabular-nums'],
   },
   valueHistoryInfo: {
     flex: 1,
@@ -512,6 +515,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   valueHistoryDeleteButton: {
     padding: 4,

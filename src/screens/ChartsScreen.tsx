@@ -407,8 +407,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   totalValue: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '800',
     color: theme.expense,
+    fontVariant: ['tabular-nums'],
   },
   chartCard: {
     marginBottom: 20,
@@ -456,6 +457,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: theme.text,
+    fontVariant: ['tabular-nums'],
   },
   categoryPercent: {
     fontSize: 13,
@@ -491,10 +493,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: theme.text,
+    fontVariant: ['tabular-nums'],
   },
   netWorthRowDiff: {
     fontSize: 13,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   incomeValue: {
     color: theme.income,

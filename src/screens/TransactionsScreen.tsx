@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { TransactionItem } from '../components/TransactionItem';
+import { TintedIcon } from '../components/TintedIcon';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -76,7 +77,7 @@ export const TransactionsScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="receipt-outline" size={64} color={theme.textSecondary} />
+      <TintedIcon name="receipt-outline" color={theme.textSecondary} size={96} iconSize={44} />
       <Text style={styles.emptyText}>{t('transactions.noTransactions')}</Text>
     </View>
   );

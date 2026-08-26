@@ -297,7 +297,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   amount: {
     fontSize: 40,
-    fontWeight: '700',
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   expenseText: {
     color: theme.expense,

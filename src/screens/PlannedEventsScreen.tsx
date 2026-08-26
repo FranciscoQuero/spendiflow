@@ -20,6 +20,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Chip } from '../components/Chip';
 import { FormScrollView } from '../components/FormScrollView';
+import { TintedIcon } from '../components/TintedIcon';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -279,7 +280,7 @@ export const PlannedEventsScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={64} color={theme.textSecondary} />
+      <TintedIcon name="calendar-outline" color={theme.textSecondary} size={96} iconSize={44} />
       <Text style={styles.emptyTitle}>{t('plannedEvents.emptyTitle')}</Text>
       <Text style={styles.emptyDescription}>{t('plannedEvents.emptyDescription')}</Text>
       <Pressable style={styles.emptyButton} onPress={openCreateModal}>
@@ -496,11 +497,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.card,
     borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
+    borderColor: theme.border,
     shadowColor: theme.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 2,
   },
   rowOverdue: {
     borderWidth: 1.5,
@@ -542,6 +545,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: theme.text,
+    fontVariant: ['tabular-nums'],
   },
   rowAmountOverdue: {
     color: theme.warning,

@@ -488,6 +488,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   breakdownRow: {
     flexDirection: 'row',
@@ -511,6 +512,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '600',
     color: theme.text,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   progressBarContainer: {
     width: '100%',
@@ -537,8 +539,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   remainingValue: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     color: theme.expense,
+    fontVariant: ['tabular-nums'],
     marginTop: 4,
   },
   metaText: {
@@ -596,6 +599,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.income,
+    fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,

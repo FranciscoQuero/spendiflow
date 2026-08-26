@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { FormScrollView } from '../components/FormScrollView';
+import { Badge } from '../components/Badge';
 import { useStore } from '../store/useStore';
 import { useTransactions } from '../hooks/useTransactions';
 import { getAccountBalance, getNetWorth } from '../hooks/useAccounts';
@@ -161,13 +162,10 @@ export const MonthCloseScreen: React.FC = () => {
             <Text style={styles.rowName}>{account.name}</Text>
             <Text style={styles.rowSubtitle}>{account.bankName}</Text>
           </View>
-          <View style={[styles.statusBadge, isModified && styles.statusBadgeModified]}>
-            <Text
-              style={[styles.statusBadgeText, isModified && styles.statusBadgeTextModified]}
-            >
-              {isModified ? t('monthClose.modifiedBadge') : t('monthClose.unchangedBadge')}
-            </Text>
-          </View>
+          <Badge
+            label={isModified ? t('monthClose.modifiedBadge') : t('monthClose.unchangedBadge')}
+            color={isModified ? theme.primary : theme.textSecondary}
+          />
         </View>
         <Text style={styles.lastDeclaredText}>
           {lastEntry
@@ -209,13 +207,10 @@ export const MonthCloseScreen: React.FC = () => {
             <Text style={styles.rowName}>{investment.name}</Text>
             <Text style={styles.rowSubtitle}>{t(investmentTypeI18nKey(investment.type))}</Text>
           </View>
-          <View style={[styles.statusBadge, isModified && styles.statusBadgeModified]}>
-            <Text
-              style={[styles.statusBadgeText, isModified && styles.statusBadgeTextModified]}
-            >
-              {isModified ? t('monthClose.modifiedBadge') : t('monthClose.unchangedBadge')}
-            </Text>
-          </View>
+          <Badge
+            label={isModified ? t('monthClose.modifiedBadge') : t('monthClose.unchangedBadge')}
+            color={isModified ? theme.primary : theme.textSecondary}
+          />
         </View>
         <Text style={styles.lastDeclaredText}>
           {investment.currentValue !== undefined
@@ -536,24 +531,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.textSecondary,
     marginTop: 2,
   },
-  statusBadge: {
-    backgroundColor: theme.background,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  statusBadgeModified: {
-    backgroundColor: theme.primaryLight + '33',
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: theme.textSecondary,
-    textTransform: 'uppercase',
-  },
-  statusBadgeTextModified: {
-    color: theme.primary,
-  },
   lastDeclaredText: {
     fontSize: 12,
     color: theme.textSecondary,
@@ -593,6 +570,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     padding: 0,
+    fontVariant: ['tabular-nums'],
   },
   emptyCard: {
     marginBottom: 12,
@@ -628,6 +606,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   debtAmount: {
     fontSize: 15,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   debtsNote: {
     fontSize: 12,
@@ -669,6 +648,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
     color: theme.primary,
     marginTop: 6,
+    fontVariant: ['tabular-nums'],
   },
   variationBlock: {
     marginTop: 20,
@@ -688,6 +668,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.text,
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   firstCloseExplainer: {
     fontSize: 12,
@@ -712,6 +693,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     marginTop: 12,
+    fontVariant: ['tabular-nums'],
   },
   scopeRow: {
     flexDirection: 'row',
@@ -734,6 +716,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   breakdownCard: {
     marginBottom: 12,
@@ -756,12 +739,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.text,
     minWidth: 80,
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   breakdownDiff: {
     fontSize: 13,
     fontWeight: '700',
     minWidth: 80,
     textAlign: 'right',
+    fontVariant: ['tabular-nums'],
   },
   breakdownDiffNeutral: {
     color: theme.textSecondary,

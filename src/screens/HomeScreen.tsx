@@ -19,7 +19,7 @@ import { useAccounts, getMyShareBalance, getInvestmentValue } from '../hooks/use
 import { getDebtsNetImpact } from '../utils/monthClose';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
-import { colors, Theme } from '../theme/colors';
+import { Theme, hexToRgba } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getUpcomingPlannedEvents } from '../utils/plannedEvents';
 import { t } from '../locales/i18n';
@@ -30,18 +30,18 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const MAX_VISIBLE_DUE = 3;
 
-// Acentos idénticos en claro/oscuro: usamos la paleta estática, no el tema activo.
 const getTypeMeta = (
+  theme: Theme,
   type: TransactionType
 ): { color: string; sign: '' | '+' | '-' } => {
   switch (type) {
     case 'income':
-      return { color: colors.income, sign: '+' };
+      return { color: theme.income, sign: '+' };
     case 'transfer':
-      return { color: colors.primary, sign: '' };
+      return { color: theme.primary, sign: '' };
     case 'expense':
     default:
-      return { color: colors.expense, sign: '-' };
+      return { color: theme.expense, sign: '-' };
   }
 };
 
@@ -164,7 +164,7 @@ export const HomeScreen: React.FC = () => {
             </View>
 
             {visibleDueRecurrences.map((rule: RecurringRule, index) => {
-              const meta = getTypeMeta(rule.template.type);
+              const meta = getTypeMeta(theme, rule.template.type);
               return (
                 <React.Fragment key={rule.id}>
                   <View style={styles.pendingRow}>
@@ -341,6 +341,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   summaryCard: {
     marginBottom: 24,
+    backgroundColor: theme.surfaceTint,
+    borderColor: hexToRgba(theme.primary, 0.14),
   },
   netWorthCard: {
     marginBottom: 24,
@@ -362,6 +364,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.text,
     marginTop: 6,
+    fontVariant: ['tabular-nums'],
   },
   netWorthBreakdown: {
     fontSize: 12,
@@ -391,6 +394,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: theme.text,
+    fontVariant: ['tabular-nums'],
   },
   pendingHeader: {
     flexDirection: 'row',
@@ -417,6 +421,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
   },
   pendingDivider: {
     height: 1,
@@ -452,8 +457,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 4,
   },
   summaryValue: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   expenseValue: {
     color: theme.expense,
@@ -465,7 +471,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: theme.border,
+    borderTopColor: hexToRgba(theme.primary, 0.14),
   },
   balanceLabel: {
     fontSize: 13,
@@ -473,8 +479,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 4,
   },
   balanceValue: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 34,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   sectionTitle: {
     fontSize: 18,

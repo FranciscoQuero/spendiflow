@@ -7,10 +7,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { RecurrenceActions } from '../components/RecurrenceActions';
+import { TintedIcon } from '../components/TintedIcon';
+import { Badge } from '../components/Badge';
 import { useStore } from '../store/useStore';
 import { getDueRecurrences } from '../hooks/useAccounts';
 import { useTheme } from '../theme/useTheme';
-import { colors, Theme } from '../theme/colors';
+import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
@@ -18,18 +20,18 @@ import { RecurringRule, TransactionType } from '../types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Acentos idénticos en claro/oscuro: usamos la paleta estática, no el tema activo.
 const getTypeMeta = (
+  theme: Theme,
   type: TransactionType
 ): { icon: keyof typeof Ionicons.glyphMap; color: string; sign: '' | '+' | '-' } => {
   switch (type) {
     case 'income':
-      return { icon: 'add-circle', color: colors.income, sign: '+' };
+      return { icon: 'add-circle', color: theme.income, sign: '+' };
     case 'transfer':
-      return { icon: 'swap-horizontal', color: colors.primary, sign: '' };
+      return { icon: 'swap-horizontal', color: theme.primary, sign: '' };
     case 'expense':
     default:
-      return { icon: 'remove-circle', color: colors.expense, sign: '-' };
+      return { icon: 'remove-circle', color: theme.expense, sign: '-' };
   }
 };
 
@@ -81,7 +83,7 @@ export const RecurringListScreen: React.FC = () => {
 
   const renderItem = ({ item }: { item: RecurringRule }) => {
     const isDue = dueRuleIds.has(item.id);
-    const meta = getTypeMeta(item.template.type);
+    const meta = getTypeMeta(theme, item.template.type);
 
     return (
       <Card
@@ -91,9 +93,7 @@ export const RecurringListScreen: React.FC = () => {
         style={[styles.ruleCard, isDue && styles.ruleCardDue]}
       >
         <View style={styles.ruleHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: meta.color }]}>
-            <Ionicons name={meta.icon} size={20} color="white" />
-          </View>
+          <TintedIcon name={meta.icon} color={meta.color} />
           <View style={styles.ruleInfo}>
             <Text style={styles.ruleName} numberOfLines={1}>
               {item.name}
@@ -118,10 +118,7 @@ export const RecurringListScreen: React.FC = () => {
 
         {isDue && (
           <View style={styles.dueRow}>
-            <View style={styles.dueBadge}>
-              <Ionicons name="alert-circle" size={14} color={theme.warning} />
-              <Text style={styles.dueBadgeText}>{t('recurring.overdue')}</Text>
-            </View>
+            <Badge icon="alert-circle" label={t('recurring.overdue')} color={theme.warning} />
             <RecurrenceActions
               onConfirm={() => confirmRecurrence(item.id)}
               onSkip={() => skipRecurrence(item.id)}
@@ -134,7 +131,7 @@ export const RecurringListScreen: React.FC = () => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="repeat-outline" size={64} color={theme.textSecondary} />
+      <TintedIcon name="repeat-outline" color={theme.textSecondary} size={96} iconSize={44} />
       <Text style={styles.emptyTitle}>{t('recurring.emptyTitle')}</Text>
       <Text style={styles.emptyDescription}>{t('recurring.emptyDescription')}</Text>
       <Pressable
@@ -220,13 +217,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   ruleInfo: {
     flex: 1,
     marginLeft: 12,
@@ -249,6 +239,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   ruleAmount: {
     fontSize: 15,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   dueRow: {
     marginTop: 16,
@@ -260,16 +251,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  dueBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dueBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.warning,
   },
   emptyContainer: {
     flex: 1,

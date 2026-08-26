@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
 import { FormScrollView } from '../components/FormScrollView';
+import { TintedIcon } from '../components/TintedIcon';
 import { useStore } from '../store/useStore';
 import { getProvisionBalance } from '../hooks/useAccounts';
 import { useTheme } from '../theme/useTheme';
@@ -173,13 +174,13 @@ export const ProvisionDetailScreen: React.FC = () => {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Balance Card */}
         <Card style={styles.balanceCard}>
-          <View style={[styles.iconCircle, { backgroundColor: provision.color }]}>
-            <Ionicons
-              name={provision.icon as keyof typeof Ionicons.glyphMap}
-              size={28}
-              color="white"
-            />
-          </View>
+          <TintedIcon
+            name={provision.icon as keyof typeof Ionicons.glyphMap}
+            color={provision.color}
+            size={64}
+            iconSize={28}
+            style={styles.iconSpacing}
+          />
           {account && <Text style={styles.accountName}>{account.name}</Text>}
           <Text style={styles.balanceLabel}>{t('provisions.balance')}</Text>
           <Text style={styles.balanceValue}>
@@ -377,12 +378,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
+  iconSpacing: {
     marginBottom: 8,
   },
   accountName: {
@@ -397,9 +393,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   balanceValue: {
     fontSize: 36,
-    fontWeight: '700',
+    fontWeight: '800',
     color: theme.text,
     marginVertical: 8,
+    fontVariant: ['tabular-nums'],
   },
   progressSection: {
     width: '100%',
@@ -482,6 +479,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   historyAmount: {
     fontSize: 16,
     fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   divider: {
     height: 1,
