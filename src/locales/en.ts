@@ -326,6 +326,14 @@ export default {
     deleteAllData: 'Delete all data',
     deleteConfirm: 'Are you sure? This action cannot be undone.',
     dataDeletedMessage: 'All data has been deleted.',
+    reminders: 'Reminders',
+    dailyReminder: 'Daily reminder',
+    dailyReminderTime: 'Reminder time',
+    dailyReminderPermissionTitle: 'Notification permission',
+    dailyReminderPermissionMessage:
+      'To receive the daily reminder, enable notifications for Spendiflow in your system settings.',
+    dailyReminderNotificationTitle: "Today's expenses?",
+    dailyReminderNotificationBody: 'Log today\'s transactions in a minute.',
   },
 
   // Common

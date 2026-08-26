@@ -326,6 +326,14 @@ export default {
     deleteAllData: 'Borrar todos los datos',
     deleteConfirm: '¿Estás seguro? Esta acción no se puede deshacer.',
     dataDeletedMessage: 'Todos los datos se han eliminado.',
+    reminders: 'Recordatorios',
+    dailyReminder: 'Recordatorio diario',
+    dailyReminderTime: 'Hora del recordatorio',
+    dailyReminderPermissionTitle: 'Permiso de notificaciones',
+    dailyReminderPermissionMessage:
+      'Para recibir el recordatorio diario, activa las notificaciones de Spendiflow en los ajustes del sistema.',
+    dailyReminderNotificationTitle: '¿Gastos de hoy?',
+    dailyReminderNotificationBody: 'Registra los movimientos del día en un minuto.',
   },
 
   // Common

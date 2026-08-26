@@ -175,6 +175,11 @@ export interface AppSettings {
   monthlyBudget?: number;
   // Cuenta preseleccionada al crear un gasto/ingreso. `undefined` = "Ninguna".
   defaultAccountId?: string;
+  dailyReminder?: {
+    enabled: boolean;
+    hour: number;
+    minute: number;
+  };
 }
 
 // Chart Data Types

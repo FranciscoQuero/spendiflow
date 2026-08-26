@@ -236,6 +236,29 @@ export const STORE_VERSION = 3;
 const asRecordArray = (value: unknown): Record<string, unknown>[] =>
   Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
 
+/** Descarta un `dailyReminder` persistido con forma inválida en lugar de propagarlo. */
+export const sanitizeDailyReminder = (
+  value: unknown
+): AppSettings['dailyReminder'] => {
+  if (!value || typeof value !== 'object') return undefined;
+  const candidate = value as Record<string, unknown>;
+  const { enabled, hour, minute } = candidate;
+  if (
+    typeof enabled !== 'boolean' ||
+    typeof hour !== 'number' ||
+    typeof minute !== 'number' ||
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return undefined;
+  }
+  return { enabled, hour, minute };
+};
+
 /** Entrada más reciente de una lista fechada, ordenando por fecha (no por posición). */
 const latestEntryByDate = <T extends { date: string }>(entries: T[]): T | undefined => {
   if (entries.length === 0) return undefined;
@@ -315,10 +338,21 @@ export const migrate = (persistedState: unknown): StoreState => {
   // cualquier campo nuevo (p.ej. `defaultAccountId`) que no existiera en un
   // estado persistido antiguo, sin tocar los valores ya guardados por el
   // usuario.
-  const settings =
+  const mergedSettings =
     state.settings && typeof state.settings === 'object'
       ? { ...initialSettings, ...(state.settings as Partial<AppSettings>) }
       : initialSettings;
+
+  // dailyReminder es un campo opcional añadido después de v3: si el estado
+  // persistido trae una forma corrupta o parcial, se descarta en lugar de
+  // arrastrar un recordatorio inválido (esto NO sube STORE_VERSION). Se
+  // construye un objeto nuevo en vez de mutar `mergedSettings`, que en la
+  // rama sin `state.settings` es la propia constante `initialSettings`
+  // compartida por todo el módulo.
+  const settings: AppSettings = {
+    ...mergedSettings,
+    dailyReminder: sanitizeDailyReminder(mergedSettings.dailyReminder),
+  };
 
   return {
     ...state,
