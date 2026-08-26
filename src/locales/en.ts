@@ -188,7 +188,9 @@ export default {
     accountName: 'Account name',
     accountNamePlaceholder: 'E.g.: Main checking',
     bankName: 'Bank name',
+    bankNameOptional: 'Bank name (optional)',
     bankNamePlaceholder: 'E.g.: BBVA, Santander',
+    bankNamePlaceholderCash: 'Wallet',
     initialBalance: 'Initial balance (optional)',
     initialBalanceNote: 'Initial balance',
     role: 'Role',
@@ -197,6 +199,7 @@ export default {
       business: 'Business',
       shared: 'Shared',
       savings: 'Savings',
+      cash: 'Cash',
       other: 'Other',
     },
     floor: 'Floor',
@@ -493,6 +496,9 @@ export default {
     doneButton: 'Done',
     debtIOwe: 'I owe',
     debtOwedToMe: 'Owed to me',
+    reconciliationText: 'Discrepancy of %{amount} versus what was recorded',
+    createAdjustment: 'Create adjustment',
+    reconciliationAdjustmentConcept: 'Reconciliation adjustment',
   },
 
   // Planned events

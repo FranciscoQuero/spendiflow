@@ -24,7 +24,7 @@ import { AccountRole } from '../types';
 
 type RouteProps = RouteProp<RootStackParamList, 'AddAccount'>;
 
-const ROLE_OPTIONS: AccountRole[] = ['personal', 'business', 'shared', 'savings', 'other'];
+const ROLE_OPTIONS: AccountRole[] = ['personal', 'business', 'shared', 'savings', 'cash', 'other'];
 
 const roleLabel = (role: AccountRole): string => {
   switch (role) {
@@ -36,6 +36,8 @@ const roleLabel = (role: AccountRole): string => {
       return t('accounts.roleOptions.shared');
     case 'savings':
       return t('accounts.roleOptions.savings');
+    case 'cash':
+      return t('accounts.roleOptions.cash');
     case 'other':
     default:
       return t('accounts.roleOptions.other');
@@ -93,7 +95,7 @@ export const AddAccountScreen: React.FC = () => {
         return;
       }
 
-      if (!bankName.trim()) {
+      if (role !== 'cash' && !bankName.trim()) {
         Alert.alert(t('common.error'), t('accounts.pleaseEnterBankName'));
         return;
       }
@@ -144,7 +146,7 @@ export const AddAccountScreen: React.FC = () => {
     }
   };
 
-  const canSave = name.trim() && bankName.trim();
+  const canSave = name.trim() && (bankName.trim() || role === 'cash');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -177,12 +179,18 @@ export const AddAccountScreen: React.FC = () => {
           />
 
           {/* Bank Name */}
-          <Text style={styles.label}>{t('accounts.bankName')}</Text>
+          <Text style={styles.label}>
+            {role === 'cash' ? t('accounts.bankNameOptional') : t('accounts.bankName')}
+          </Text>
           <TextInput
             style={styles.textInput}
             value={bankName}
             onChangeText={setBankName}
-            placeholder={t('accounts.bankNamePlaceholder')}
+            placeholder={
+              role === 'cash'
+                ? t('accounts.bankNamePlaceholderCash')
+                : t('accounts.bankNamePlaceholder')
+            }
             placeholderTextColor={theme.textSecondary}
           />
 

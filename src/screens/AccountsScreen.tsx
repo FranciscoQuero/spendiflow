@@ -40,10 +40,15 @@ const roleLabel = (role: string): string => {
       return t('accounts.roleOptions.shared');
     case 'savings':
       return t('accounts.roleOptions.savings');
+    case 'cash':
+      return t('accounts.roleOptions.cash');
     default:
       return t('accounts.roleOptions.other');
   }
 };
+
+const accountIconName = (role: string): keyof typeof Ionicons.glyphMap =>
+  role === 'cash' ? 'cash-outline' : 'wallet';
 
 export const AccountsScreen: React.FC = () => {
   const theme = useTheme();
@@ -119,7 +124,7 @@ export const AccountsScreen: React.FC = () => {
         onPress={() => navigation.navigate('AccountDetail', { id: account.id })}
       >
         <View style={styles.itemHeader}>
-          <TintedIcon name="wallet" color={theme.primary} />
+          <TintedIcon name={accountIconName(account.role)} color={theme.primary} />
           <View style={styles.itemInfo}>
             <Text style={styles.itemName}>{account.name}</Text>
             <Text style={styles.itemSubtitle}>{account.bankName}</Text>

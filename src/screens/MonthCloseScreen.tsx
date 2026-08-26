@@ -15,6 +15,7 @@ import {
   getAccountBalanceDiffs,
   hasBalanceEntryInMonth,
 } from '../utils/monthClose';
+import { computeImpliedBalance, computeDiscrepancy } from '../utils/reconciliation';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import {
@@ -51,8 +52,10 @@ export const MonthCloseScreen: React.FC = () => {
   const bankAccounts = useStore((state) => state.bankAccounts);
   const investments = useStore((state) => state.investments);
   const debts = useStore((state) => state.debts);
+  const transactions = useStore((state) => state.transactions);
   const addBalanceEntry = useStore((state) => state.addBalanceEntry);
   const addInvestmentValueEntry = useStore((state) => state.addInvestmentValueEntry);
+  const addTransaction = useStore((state) => state.addTransaction);
   const settings = useStore((state) => state.settings);
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
@@ -93,6 +96,34 @@ export const MonthCloseScreen: React.FC = () => {
 
   const handleInvestmentInputChange = (investmentId: string, text: string) => {
     setInvestmentInputs((prev) => ({ ...prev, [investmentId]: sanitizeAmountInput(text) }));
+  };
+
+  /**
+   * Crea una transacción de ajuste para eliminar el descuadre detectado
+   * entre el saldo declarado y el saldo implícito: gasto si falta dinero
+   * (descuadre negativo), ingreso si sobra (descuadre positivo). Sin
+   * categoría asignada; al añadirse a `transactions`, el descuadre se
+   * recalcula automáticamente y desaparece.
+   */
+  const handleCreateAdjustment = (accountId: string, discrepancy: number) => {
+    const amount = Math.abs(discrepancy);
+    if (amount === 0) return;
+
+    const today = getDateISO();
+    const todayDate = new Date(today);
+
+    addTransaction({
+      type: discrepancy < 0 ? 'expense' : 'income',
+      amount,
+      concept: t('monthClose.reconciliationAdjustmentConcept'),
+      accountId,
+      scope: 'personal',
+      date: today,
+      month: todayDate.getMonth() + 1,
+      year: todayDate.getFullYear(),
+    });
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleSave = () => {
@@ -155,6 +186,10 @@ export const MonthCloseScreen: React.FC = () => {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     )[0];
 
+    const implied = computeImpliedBalance(account, transactions, lastEntry?.date, getDateISO());
+    const discrepancy = computeDiscrepancy(parsedInput, implied);
+    const showDiscrepancy = discrepancy !== null && Math.abs(discrepancy) >= 0.01;
+
     return (
       <Card key={account.id} style={styles.rowCard}>
         <View style={styles.rowHeader}>
@@ -190,6 +225,18 @@ export const MonthCloseScreen: React.FC = () => {
             />
           </View>
         </View>
+        {showDiscrepancy && discrepancy !== null && (
+          <View style={styles.reconciliationRow}>
+            <Text style={styles.reconciliationText}>
+              {t('monthClose.reconciliationText', {
+                amount: formatCurrency(Math.abs(discrepancy), settings.currencySymbol, locale),
+              })}
+            </Text>
+            <Pressable onPress={() => handleCreateAdjustment(account.id, discrepancy)}>
+              <Text style={styles.reconciliationLink}>{t('monthClose.createAdjustment')}</Text>
+            </Pressable>
+          </View>
+        )}
       </Card>
     );
   };
@@ -571,6 +618,26 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: 'right',
     padding: 0,
     fontVariant: ['tabular-nums'],
+  },
+  reconciliationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+  },
+  reconciliationText: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.expense,
+    marginRight: 8,
+  },
+  reconciliationLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.primary,
   },
   emptyCard: {
     marginBottom: 12,

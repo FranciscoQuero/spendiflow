@@ -37,7 +37,7 @@ export interface Transaction {
   createdAt: string;
 }
 
-export type AccountRole = 'personal' | 'business' | 'shared' | 'savings' | 'other';
+export type AccountRole = 'personal' | 'business' | 'shared' | 'savings' | 'cash' | 'other';
 
 export interface BankAccount {
   id: string;
