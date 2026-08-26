@@ -171,6 +171,8 @@ export interface AppSettings {
   currency: string;
   currencySymbol: string;
   theme: 'light' | 'dark' | 'system';
+  // Cuenta preseleccionada al crear un gasto/ingreso. `undefined` = "Ninguna".
+  defaultAccountId?: string;
 }
 
 // Chart Data Types

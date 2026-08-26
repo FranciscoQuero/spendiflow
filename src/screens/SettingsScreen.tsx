@@ -52,6 +52,12 @@ export const SettingsScreen: React.FC = () => {
   const updateSettings = useStore((state) => state.updateSettings);
   const resetAllData = useStore((state) => state.resetAllData);
   const categories = useStore((state) => state.categories);
+  const bankAccounts = useStore((state) => state.bankAccounts);
+
+  const activeAccounts = useMemo(
+    () => bankAccounts.filter((a) => !a.archived),
+    [bankAccounts]
+  );
 
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -70,6 +76,10 @@ export const SettingsScreen: React.FC = () => {
 
   const handleThemeChange = (themeSetting: AppSettings['theme']) => {
     updateSettings({ theme: themeSetting });
+  };
+
+  const handleDefaultAccountChange = (accountId: string | undefined) => {
+    updateSettings({ defaultAccountId: accountId });
   };
 
   const handleResetData = () => {
@@ -306,6 +316,27 @@ export const SettingsScreen: React.FC = () => {
     );
   };
 
+  const DefaultAccountOption = ({
+    accountId,
+    label,
+  }: {
+    accountId: string | undefined;
+    label: string;
+  }) => {
+    const active = settings.defaultAccountId === accountId;
+    return (
+      <Pressable
+        style={[styles.languageOption, active && styles.languageOptionActive]}
+        onPress={() => handleDefaultAccountChange(accountId)}
+      >
+        <Text style={[styles.languageText, active && styles.languageTextActive]}>
+          {label}
+        </Text>
+        {active && <Ionicons name="checkmark" size={20} color={theme.primary} />}
+      </Pressable>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -348,6 +379,18 @@ export const SettingsScreen: React.FC = () => {
                 currencySymbol={option.currencySymbol}
                 label={option.label}
               />
+            </React.Fragment>
+          ))}
+        </Card>
+
+        {/* Default Account Section */}
+        <Text style={styles.sectionTitle}>{t('settings.defaultAccount')}</Text>
+        <Card style={styles.card}>
+          <DefaultAccountOption accountId={undefined} label={t('settings.noDefaultAccount')} />
+          {activeAccounts.map((account) => (
+            <React.Fragment key={account.id}>
+              <View style={styles.divider} />
+              <DefaultAccountOption accountId={account.id} label={account.name} />
             </React.Fragment>
           ))}
         </Card>
