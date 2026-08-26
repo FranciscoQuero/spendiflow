@@ -18,6 +18,7 @@ import { AmountInput } from '../components/AmountInput';
 import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { getInvestmentValue } from '../hooks/useAccounts';
+import { computeInvestmentReturn, hasInvestmentValue } from '../utils/investments';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
@@ -65,7 +66,7 @@ export const InvestmentDetailScreen: React.FC = () => {
     );
   }, [investment]);
 
-  const hasValue = !!investment && investment.currentValue !== undefined;
+  const hasValue = !!investment && hasInvestmentValue(investment);
   const currentValue = investment ? getInvestmentValue(investment) : 0;
 
   if (!investment) {
@@ -150,10 +151,10 @@ export const InvestmentDetailScreen: React.FC = () => {
     ]);
   };
 
-  const returnPercent =
-    hasValue && totalContributed > 0
-      ? ((currentValue - totalContributed) / totalContributed) * 100
-      : 0;
+  const { gain, percent } = computeInvestmentReturn(
+    totalContributed,
+    hasValue ? currentValue : undefined
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -173,34 +174,62 @@ export const InvestmentDetailScreen: React.FC = () => {
         <Card style={styles.summaryCard}>
           <Text style={styles.investmentType}>{investmentTypeLabel(investment.type)}</Text>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statLabel}>{t('accounts.totalContributed')}</Text>
-              <Text style={[styles.statValue, { color: theme.income }]}>
-                {formatCurrency(totalContributed, settings.currencySymbol, locale)}
-              </Text>
-            </View>
-            {hasValue && (
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>{t('accounts.currentValue')}</Text>
-                <Text style={[styles.statValue, { color: theme.primary }]}>
-                  {formatCurrency(currentValue, settings.currencySymbol, locale)}
-                </Text>
-              </View>
-            )}
+          {/* Dato principal: valor actual (o total aportado, con su propia
+              etiqueta, cuando todavía no hay ningún valor registrado). */}
+          <View style={styles.primaryValueContainer}>
+            <Text style={styles.primaryValueLabel}>
+              {hasValue ? t('accounts.currentValue') : t('accounts.totalContributed')}
+            </Text>
+            <Text
+              style={[
+                styles.primaryValueText,
+                { color: hasValue ? theme.primary : theme.income },
+              ]}
+            >
+              {formatCurrency(
+                hasValue ? currentValue : totalContributed,
+                settings.currencySymbol,
+                locale
+              )}
+            </Text>
           </View>
 
           {hasValue && (
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>{t('accounts.totalContributed')}</Text>
+                <Text style={[styles.statValue, { color: theme.income }]}>
+                  {formatCurrency(totalContributed, settings.currencySymbol, locale)}
+                </Text>
+              </View>
+              {gain !== null && (
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>{t('accounts.gain')}</Text>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: gain >= 0 ? theme.income : theme.expense },
+                    ]}
+                  >
+                    {gain >= 0 ? '+' : ''}
+                    {formatCurrency(gain, settings.currencySymbol, locale)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {hasValue && percent !== null && (
             <View style={styles.returnContainer}>
               <Text style={styles.returnLabel}>{t('accounts.return')}</Text>
               <Text
                 style={[
                   styles.returnValue,
-                  returnPercent >= 0 ? styles.positiveReturn : styles.negativeReturn,
+                  percent >= 0 ? styles.positiveReturn : styles.negativeReturn,
                 ]}
               >
-                {returnPercent >= 0 ? '+' : ''}
-                {returnPercent.toFixed(2)}%
+                {percent >= 0 ? '+' : ''}
+                {percent.toFixed(2)}%
               </Text>
             </View>
           )}
@@ -414,6 +443,23 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
     textTransform: 'uppercase',
+  },
+  primaryValueContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  primaryValueLabel: {
+    fontSize: 13,
+    color: theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  primaryValueText: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: theme.primary,
+    marginTop: 4,
+    fontVariant: ['tabular-nums'],
   },
   statsRow: {
     flexDirection: 'row',
