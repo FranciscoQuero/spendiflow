@@ -1,6 +1,7 @@
 // Core Types for Spendiflow
 
-export type TransactionType = 'expense' | 'income';
+export type TransactionType = 'expense' | 'income' | 'transfer';
+export type TransactionScope = 'personal' | 'business';
 
 export interface Category {
   id: string;
@@ -24,8 +25,11 @@ export interface Transaction {
   type: TransactionType;
   amount: number;
   concept: string;
-  categoryId: string;
+  categoryId?: string; // ausente en transferencias
   subcategoryId?: string;
+  accountId?: string; // cuenta afectada: origen en expense/transfer, destino en income
+  toAccountId?: string; // solo para type 'transfer': cuenta destino
+  scope: TransactionScope;
   date: string; // ISO string
   month: number; // 1-12
   year: number;
@@ -33,10 +37,16 @@ export interface Transaction {
   createdAt: string;
 }
 
+export type AccountRole = 'personal' | 'business' | 'shared' | 'savings' | 'other';
+
 export interface BankAccount {
   id: string;
   name: string;
   bankName: string;
+  role: AccountRole;
+  floor?: number; // "suelo": colchón mínimo que el usuario no quiere tocar
+  ownershipShare: number; // 0-1, 0.5 = cuenta compartida al 50%
+  archived: boolean;
   balanceHistory: BalanceEntry[];
   createdAt: string;
 }
@@ -65,6 +75,9 @@ export interface Contribution {
   note?: string;
 }
 
+export type DebtDirection = 'iOwe' | 'owedToMe';
+export type PaymentKind = 'installment' | 'extra';
+
 export interface Debt {
   id: string;
   creditorName: string;
@@ -73,6 +86,8 @@ export interface Debt {
   interestRate?: number;
   dueDate?: string;
   note?: string;
+  direction: DebtDirection;
+  monthlyPayment?: number;
   createdAt: string;
 }
 
@@ -80,7 +95,61 @@ export interface Payment {
   id: string;
   amount: number;
   date: string;
+  kind: PaymentKind;
   note?: string;
+}
+
+export interface Provision {
+  // "hucha" virtual dentro de una cuenta
+  id: string;
+  accountId: string;
+  name: string;
+  icon: string; // nombre de Ionicon
+  color: string;
+  targetAmount?: number;
+  entries: ProvisionEntry[];
+  archived: boolean;
+  createdAt: string;
+}
+
+export interface ProvisionEntry {
+  id: string;
+  amount: number; // positivo = aporte a la hucha, negativo = liquidación/retirada
+  date: string;
+  note?: string;
+}
+
+export type RecurrenceFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface RecurringRule {
+  id: string;
+  name: string;
+  template: {
+    type: TransactionType;
+    amount: number;
+    concept: string;
+    categoryId?: string;
+    subcategoryId?: string;
+    accountId?: string;
+    toAccountId?: string;
+    scope: TransactionScope;
+  };
+  frequency: RecurrenceFrequency;
+  nextDueDate: string; // ISO date
+  active: boolean;
+  createdAt: string;
+}
+
+export interface PlannedEvent {
+  // calendario financiero: vencimientos con importe estimado
+  id: string;
+  name: string;
+  date: string; // ISO
+  estimatedAmount?: number;
+  accountId?: string;
+  note?: string;
+  done: boolean;
+  createdAt: string;
 }
 
 // Period Types for Charts

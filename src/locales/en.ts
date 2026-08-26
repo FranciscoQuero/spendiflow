@@ -181,6 +181,32 @@ export default {
     today: 'Today',
     yesterday: 'Yesterday',
     currency: '€',
+    underConstruction: 'Under construction',
+  },
+
+  // Transfers
+  transfers: {
+    title: 'Transfers',
+  },
+
+  // Provisions (savings pots)
+  provisions: {
+    title: 'Savings pots',
+  },
+
+  // Recurring rules
+  recurring: {
+    title: 'Recurring',
+  },
+
+  // Month close
+  monthClose: {
+    title: 'Month close',
+  },
+
+  // Planned events
+  plannedEvents: {
+    title: 'Financial calendar',
   },
 
   // Months

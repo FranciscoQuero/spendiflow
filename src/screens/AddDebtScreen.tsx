@@ -46,6 +46,7 @@ export const AddDebtScreen: React.FC = () => {
       totalAmount: parsedAmount,
       interestRate: parseNumber(interestRate) || undefined,
       note: note.trim() || undefined,
+      direction: 'iOwe',
     });
 
     navigation.goBack();

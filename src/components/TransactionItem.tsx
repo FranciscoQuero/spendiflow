@@ -55,7 +55,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         ]}
       >
         <Ionicons
-          name={categoryIcons[transaction.categoryId] || 'receipt'}
+          name={(transaction.categoryId && categoryIcons[transaction.categoryId]) || 'receipt'}
           size={20}
           color="white"
         />

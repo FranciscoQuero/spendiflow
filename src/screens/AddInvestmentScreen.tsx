@@ -50,17 +50,14 @@ export const AddInvestmentScreen: React.FC = () => {
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    addInvestment({
+    const newInvestmentId = addInvestment({
       name: name.trim(),
       type: selectedType,
     });
 
     // Add initial contribution if provided
-    const investments = useStore.getState().investments;
-    const newInvestment = investments[investments.length - 1];
-
-    if (newInvestment && parseNumber(initialContribution) > 0) {
-      addContribution(newInvestment.id, {
+    if (parseNumber(initialContribution) > 0) {
+      addContribution(newInvestmentId, {
         amount: parseNumber(initialContribution),
         date: getDateISO(),
         note: 'Initial contribution',

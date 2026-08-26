@@ -1,4 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
+import { TransactionType } from '../types';
 
 export type TabParamList = {
   Home: undefined;
@@ -10,16 +11,22 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList>;
-  AddTransaction: { type: 'expense' | 'income' };
+  AddTransaction: { type?: TransactionType; transactionId?: string };
   AddBalance: undefined;
-  AddAccount: undefined;
+  AddAccount: { accountId?: string } | undefined;
   AddInvestment: undefined;
-  AddDebt: undefined;
+  AddDebt: { debtId?: string } | undefined;
   TransactionDetail: { id: string };
   AccountDetail: { id: string };
   InvestmentDetail: { id: string };
   DebtDetail: { id: string };
   EditCategories: { type: 'expense' | 'income' };
+  RecurringList: undefined;
+  AddRecurring: { ruleId?: string } | undefined;
+  ProvisionDetail: { provisionId: string };
+  AddProvision: { accountId?: string } | undefined;
+  MonthClose: undefined;
+  PlannedEvents: undefined;
 };
 
 declare global {

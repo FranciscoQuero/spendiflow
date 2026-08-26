@@ -42,18 +42,17 @@ export const AddAccountScreen: React.FC = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       // Create the account
-      addBankAccount({
+      const newAccountId = addBankAccount({
         name: name.trim(),
         bankName: bankName.trim(),
+        role: 'personal',
+        ownershipShare: 1,
+        archived: false,
       });
 
-      // Get the last added account to add initial balance
-      const accounts = useStore.getState().bankAccounts;
-      const newAccount = accounts[accounts.length - 1];
-
       const balance = parseNumber(initialBalance);
-      if (newAccount && balance > 0) {
-        addBalanceEntry(newAccount.id, {
+      if (balance > 0) {
+        addBalanceEntry(newAccountId, {
           amount: balance,
           date: getDateISO(),
           note: 'Initial balance',

@@ -27,7 +27,8 @@ type RouteProps = RouteProp<RootStackParamList, 'AddTransaction'>;
 export const AddTransactionScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
-  const { type } = route.params;
+  // 'transfer' aún no tiene UI propia aquí; por defecto se abre como gasto.
+  const type = route.params.type ?? 'expense';
 
   const addTransaction = useStore((state) => state.addTransaction);
   const categories = useStore((state) => state.categories);
@@ -86,8 +87,9 @@ export const AddTransactionScreen: React.FC = () => {
       type,
       amount: parsedAmount,
       concept: concept.trim(),
-      categoryId: selectedCategoryId,
+      categoryId: selectedCategoryId || undefined,
       subcategoryId: selectedSubcategoryId || undefined,
+      scope: 'personal',
       date: getDateISO(date),
       month: date.getMonth() + 1,
       year: date.getFullYear(),
@@ -126,7 +128,7 @@ export const AddTransactionScreen: React.FC = () => {
           <AmountInput
             value={amount}
             onChangeText={setAmount}
-            type={type}
+            type={type === 'income' ? 'income' : 'expense'}
             autoFocus
           />
 

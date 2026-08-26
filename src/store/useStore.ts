@@ -8,12 +8,21 @@ import {
   BankAccount,
   Investment,
   Debt,
+  Provision,
+  RecurringRule,
+  PlannedEvent,
   AppSettings,
   BalanceEntry,
   Contribution,
   Payment,
+  ProvisionEntry,
+  TransactionScope,
+  AccountRole,
+  DebtDirection,
+  PaymentKind,
 } from '../types';
 import { colors } from '../theme/colors';
+import { advanceDate } from '../utils/recurrence';
 
 // Default expense categories (matching Excel)
 const defaultExpenseCategories: Category[] = [
@@ -143,37 +152,58 @@ interface StoreState {
   bankAccounts: BankAccount[];
   investments: Investment[];
   debts: Debt[];
+  provisions: Provision[];
+  recurringRules: RecurringRule[];
+  plannedEvents: PlannedEvent[];
   settings: AppSettings;
 
   // Transaction Actions
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => string;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
   // Category Actions
-  addCategory: (category: Omit<Category, 'id' | 'subcategories'>) => void;
+  addCategory: (category: Omit<Category, 'id' | 'subcategories'>) => string;
   updateCategory: (id: string, updates: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   addSubcategory: (categoryId: string, name: string, nameEn: string) => void;
   deleteSubcategory: (categoryId: string, subcategoryId: string) => void;
 
   // Bank Account Actions
-  addBankAccount: (account: Omit<BankAccount, 'id' | 'createdAt' | 'balanceHistory'>) => void;
+  addBankAccount: (account: Omit<BankAccount, 'id' | 'createdAt' | 'balanceHistory'>) => string;
   updateBankAccount: (id: string, updates: Partial<BankAccount>) => void;
   deleteBankAccount: (id: string) => void;
   addBalanceEntry: (accountId: string, entry: Omit<BalanceEntry, 'id'>) => void;
 
   // Investment Actions
-  addInvestment: (investment: Omit<Investment, 'id' | 'createdAt' | 'contributions'>) => void;
+  addInvestment: (investment: Omit<Investment, 'id' | 'createdAt' | 'contributions'>) => string;
   updateInvestment: (id: string, updates: Partial<Investment>) => void;
   deleteInvestment: (id: string) => void;
   addContribution: (investmentId: string, contribution: Omit<Contribution, 'id'>) => void;
 
   // Debt Actions
-  addDebt: (debt: Omit<Debt, 'id' | 'createdAt' | 'payments'>) => void;
+  addDebt: (debt: Omit<Debt, 'id' | 'createdAt' | 'payments'>) => string;
   updateDebt: (id: string, updates: Partial<Debt>) => void;
   deleteDebt: (id: string) => void;
   addPayment: (debtId: string, payment: Omit<Payment, 'id'>) => void;
+
+  // Provision Actions
+  addProvision: (provision: Omit<Provision, 'id' | 'createdAt' | 'entries'>) => string;
+  updateProvision: (id: string, updates: Partial<Provision>) => void;
+  deleteProvision: (id: string) => void;
+  addProvisionEntry: (provisionId: string, entry: Omit<ProvisionEntry, 'id'>) => void;
+
+  // Recurring Rule Actions
+  addRecurringRule: (rule: Omit<RecurringRule, 'id' | 'createdAt'>) => string;
+  updateRecurringRule: (id: string, updates: Partial<RecurringRule>) => void;
+  deleteRecurringRule: (id: string) => void;
+  confirmRecurrence: (ruleId: string, date?: string) => void;
+  skipRecurrence: (ruleId: string) => void;
+
+  // Planned Event Actions
+  addPlannedEvent: (event: Omit<PlannedEvent, 'id' | 'createdAt'>) => string;
+  updatePlannedEvent: (id: string, updates: Partial<PlannedEvent>) => void;
+  deletePlannedEvent: (id: string) => void;
 
   // Settings Actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -189,6 +219,78 @@ const initialSettings: AppSettings = {
   theme: 'system',
 };
 
+const STORE_VERSION = 2;
+
+const asRecordArray = (value: unknown): Record<string, unknown>[] =>
+  Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+
+/**
+ * Migra un estado persistido (v0/v1/undefined, potencialmente parcial) a la
+ * forma v2, rellenando los campos nuevos con sus valores por defecto.
+ * Exportada para poder testearla de forma aislada.
+ */
+export const migrate = (persistedState: unknown): StoreState => {
+  const state = (persistedState && typeof persistedState === 'object'
+    ? (persistedState as Record<string, unknown>)
+    : {}) as Record<string, unknown>;
+
+  const migratedTransactions = asRecordArray(state.transactions).map((t) => ({
+    ...t,
+    scope: (t.scope as TransactionScope | undefined) ?? 'personal',
+  })) as unknown as Transaction[];
+
+  const categories = Array.isArray(state.categories)
+    ? (state.categories as Category[])
+    : [...defaultExpenseCategories, ...defaultIncomeCategories];
+
+  const migratedAccounts = asRecordArray(state.bankAccounts).map((a) => ({
+    ...a,
+    role: (a.role as AccountRole | undefined) ?? 'personal',
+    ownershipShare: typeof a.ownershipShare === 'number' ? a.ownershipShare : 1,
+    archived: typeof a.archived === 'boolean' ? a.archived : false,
+    balanceHistory: Array.isArray(a.balanceHistory) ? a.balanceHistory : [],
+  })) as unknown as BankAccount[];
+
+  const investments = Array.isArray(state.investments)
+    ? (state.investments as Investment[])
+    : [];
+
+  const migratedDebts = asRecordArray(state.debts).map((d) => ({
+    ...d,
+    direction: (d.direction as DebtDirection | undefined) ?? 'iOwe',
+    payments: asRecordArray(d.payments).map((p) => ({
+      ...p,
+      kind: (p.kind as PaymentKind | undefined) ?? 'installment',
+    })),
+  })) as unknown as Debt[];
+
+  const provisions = Array.isArray(state.provisions) ? (state.provisions as Provision[]) : [];
+  const recurringRules = Array.isArray(state.recurringRules)
+    ? (state.recurringRules as RecurringRule[])
+    : [];
+  const plannedEvents = Array.isArray(state.plannedEvents)
+    ? (state.plannedEvents as PlannedEvent[])
+    : [];
+
+  const settings =
+    state.settings && typeof state.settings === 'object'
+      ? { ...initialSettings, ...(state.settings as Partial<AppSettings>) }
+      : initialSettings;
+
+  return {
+    ...state,
+    transactions: migratedTransactions,
+    categories,
+    bankAccounts: migratedAccounts,
+    investments,
+    debts: migratedDebts,
+    provisions,
+    recurringRules,
+    plannedEvents,
+    settings,
+  } as StoreState;
+};
+
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
@@ -198,20 +300,35 @@ export const useStore = create<StoreState>()(
       bankAccounts: [],
       investments: [],
       debts: [],
+      provisions: [],
+      recurringRules: [],
+      plannedEvents: [],
       settings: initialSettings,
 
       // Transaction Actions
-      addTransaction: (transaction) =>
+      addTransaction: (transaction) => {
+        if (transaction.type === 'transfer') {
+          if (!transaction.accountId || !transaction.toAccountId) {
+            throw new Error('Transfer transactions require accountId and toAccountId');
+          }
+          if (transaction.accountId === transaction.toAccountId) {
+            throw new Error('Transfer accountId and toAccountId must be different');
+          }
+        }
+
+        const id = uuidv4();
         set((state) => ({
           transactions: [
             ...state.transactions,
             {
               ...transaction,
-              id: uuidv4(),
+              id,
               createdAt: new Date().toISOString(),
             },
           ],
-        })),
+        }));
+        return id;
+      },
 
       updateTransaction: (id, updates) =>
         set((state) => ({
@@ -226,17 +343,20 @@ export const useStore = create<StoreState>()(
         })),
 
       // Category Actions
-      addCategory: (category) =>
+      addCategory: (category) => {
+        const id = uuidv4();
         set((state) => ({
           categories: [
             ...state.categories,
             {
               ...category,
-              id: uuidv4(),
+              id,
               subcategories: [],
             },
           ],
-        })),
+        }));
+        return id;
+      },
 
       updateCategory: (id, updates) =>
         set((state) => ({
@@ -248,6 +368,11 @@ export const useStore = create<StoreState>()(
       deleteCategory: (id) =>
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
+          transactions: state.transactions.map((t) =>
+            t.categoryId === id
+              ? { ...t, categoryId: undefined, subcategoryId: undefined }
+              : t
+          ),
         })),
 
       addSubcategory: (categoryId, name, nameEn) =>
@@ -280,18 +405,21 @@ export const useStore = create<StoreState>()(
         })),
 
       // Bank Account Actions
-      addBankAccount: (account) =>
+      addBankAccount: (account) => {
+        const id = uuidv4();
         set((state) => ({
           bankAccounts: [
             ...state.bankAccounts,
             {
               ...account,
-              id: uuidv4(),
+              id,
               balanceHistory: [],
               createdAt: new Date().toISOString(),
             },
           ],
-        })),
+        }));
+        return id;
+      },
 
       updateBankAccount: (id, updates) =>
         set((state) => ({
@@ -321,18 +449,21 @@ export const useStore = create<StoreState>()(
         })),
 
       // Investment Actions
-      addInvestment: (investment) =>
+      addInvestment: (investment) => {
+        const id = uuidv4();
         set((state) => ({
           investments: [
             ...state.investments,
             {
               ...investment,
-              id: uuidv4(),
+              id,
               contributions: [],
               createdAt: new Date().toISOString(),
             },
           ],
-        })),
+        }));
+        return id;
+      },
 
       updateInvestment: (id, updates) =>
         set((state) => ({
@@ -362,18 +493,21 @@ export const useStore = create<StoreState>()(
         })),
 
       // Debt Actions
-      addDebt: (debt) =>
+      addDebt: (debt) => {
+        const id = uuidv4();
         set((state) => ({
           debts: [
             ...state.debts,
             {
               ...debt,
-              id: uuidv4(),
+              id,
               payments: [],
               createdAt: new Date().toISOString(),
             },
           ],
-        })),
+        }));
+        return id;
+      },
 
       updateDebt: (id, updates) =>
         set((state) => ({
@@ -397,6 +531,131 @@ export const useStore = create<StoreState>()(
           ),
         })),
 
+      // Provision Actions
+      addProvision: (provision) => {
+        const id = uuidv4();
+        set((state) => ({
+          provisions: [
+            ...state.provisions,
+            {
+              ...provision,
+              id,
+              entries: [],
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+
+      updateProvision: (id, updates) =>
+        set((state) => ({
+          provisions: state.provisions.map((p) =>
+            p.id === id ? { ...p, ...updates } : p
+          ),
+        })),
+
+      deleteProvision: (id) =>
+        set((state) => ({
+          provisions: state.provisions.filter((p) => p.id !== id),
+        })),
+
+      addProvisionEntry: (provisionId, entry) =>
+        set((state) => ({
+          provisions: state.provisions.map((p) =>
+            p.id === provisionId
+              ? { ...p, entries: [...p.entries, { ...entry, id: uuidv4() }] }
+              : p
+          ),
+        })),
+
+      // Recurring Rule Actions
+      addRecurringRule: (rule) => {
+        const id = uuidv4();
+        set((state) => ({
+          recurringRules: [
+            ...state.recurringRules,
+            {
+              ...rule,
+              id,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+
+      updateRecurringRule: (id, updates) =>
+        set((state) => ({
+          recurringRules: state.recurringRules.map((r) =>
+            r.id === id ? { ...r, ...updates } : r
+          ),
+        })),
+
+      deleteRecurringRule: (id) =>
+        set((state) => ({
+          recurringRules: state.recurringRules.filter((r) => r.id !== id),
+        })),
+
+      confirmRecurrence: (ruleId, date) => {
+        const rule = get().recurringRules.find((r) => r.id === ruleId);
+        if (!rule) return;
+
+        const txDate = date || rule.nextDueDate;
+        const txDateObj = new Date(txDate);
+
+        get().addTransaction({
+          ...rule.template,
+          date: txDate,
+          month: txDateObj.getMonth() + 1,
+          year: txDateObj.getFullYear(),
+        });
+
+        const nextDueDate = advanceDate(rule.nextDueDate, rule.frequency);
+        set((state) => ({
+          recurringRules: state.recurringRules.map((r) =>
+            r.id === ruleId ? { ...r, nextDueDate } : r
+          ),
+        }));
+      },
+
+      skipRecurrence: (ruleId) =>
+        set((state) => ({
+          recurringRules: state.recurringRules.map((r) =>
+            r.id === ruleId
+              ? { ...r, nextDueDate: advanceDate(r.nextDueDate, r.frequency) }
+              : r
+          ),
+        })),
+
+      // Planned Event Actions
+      addPlannedEvent: (event) => {
+        const id = uuidv4();
+        set((state) => ({
+          plannedEvents: [
+            ...state.plannedEvents,
+            {
+              ...event,
+              id,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+
+      updatePlannedEvent: (id, updates) =>
+        set((state) => ({
+          plannedEvents: state.plannedEvents.map((e) =>
+            e.id === id ? { ...e, ...updates } : e
+          ),
+        })),
+
+      deletePlannedEvent: (id) =>
+        set((state) => ({
+          plannedEvents: state.plannedEvents.filter((e) => e.id !== id),
+        })),
+
       // Settings Actions
       updateSettings: (newSettings) =>
         set((state) => ({
@@ -411,12 +670,22 @@ export const useStore = create<StoreState>()(
           bankAccounts: [],
           investments: [],
           debts: [],
+          provisions: [],
+          recurringRules: [],
+          plannedEvents: [],
           settings: initialSettings,
         }),
     }),
     {
       name: 'spendiflow-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      version: STORE_VERSION,
+      migrate: (persistedState, version) => {
+        if (version >= STORE_VERSION) {
+          return persistedState as StoreState;
+        }
+        return migrate(persistedState);
+      },
     }
   )
 );

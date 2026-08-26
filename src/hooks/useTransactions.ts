@@ -1,5 +1,60 @@
 import { useStore } from '../store/useStore';
-import { Transaction, CategoryTotal, PeriodSummary, ChartPeriod } from '../types';
+import {
+  Transaction,
+  Category,
+  CategoryTotal,
+  PeriodSummary,
+  ChartPeriod,
+  TransactionScope,
+} from '../types';
+
+/**
+ * Calcula el resumen de un período a partir de una lista de transacciones ya
+ * filtrada. Excluye las transferencias, que no son ni gasto ni ingreso.
+ * Función pura, exportada para poder testearla sin pasar por el store.
+ */
+export const computePeriodSummary = (
+  transactions: Transaction[],
+  categories: Category[]
+): PeriodSummary => {
+  const relevant = transactions.filter((t) => t.type !== 'transfer');
+
+  const expenses = relevant.filter((t) => t.type === 'expense');
+  const incomes = relevant.filter((t) => t.type === 'income');
+
+  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = incomes.reduce((sum, t) => sum + t.amount, 0);
+
+  // Group expenses by category (las que no tienen categoría se excluyen del desglose)
+  const expensesByCategory = expenses.reduce((acc, t) => {
+    if (!t.categoryId) return acc;
+    acc[t.categoryId] = (acc[t.categoryId] || 0) + t.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const byCategory: CategoryTotal[] = Object.entries(expensesByCategory).map(
+    ([categoryId, total]) => {
+      const category = categories.find((c) => c.id === categoryId);
+      return {
+        categoryId,
+        categoryName: category?.name || categoryId,
+        total,
+        percentage: totalExpenses > 0 ? (total / totalExpenses) * 100 : 0,
+        color: category?.color || '#6B7280',
+      };
+    }
+  );
+
+  // Sort by total descending
+  byCategory.sort((a, b) => b.total - a.total);
+
+  return {
+    totalExpenses,
+    totalIncome,
+    netBalance: totalIncome - totalExpenses,
+    byCategory,
+  };
+};
 
 export const useTransactions = () => {
   const transactions = useStore((state) => state.transactions);
@@ -7,7 +62,8 @@ export const useTransactions = () => {
 
   const getTransactionsByPeriod = (
     period: ChartPeriod,
-    referenceDate: Date = new Date()
+    referenceDate: Date = new Date(),
+    scope?: TransactionScope
   ): Transaction[] => {
     const now = referenceDate;
     let startDate: Date;
@@ -31,50 +87,18 @@ export const useTransactions = () => {
 
     return transactions.filter((t) => {
       const transactionDate = new Date(t.date);
-      return transactionDate >= startDate && transactionDate <= now;
+      const inRange = transactionDate >= startDate && transactionDate <= now;
+      return inRange && (scope === undefined || t.scope === scope);
     });
   };
 
   const getPeriodSummary = (
     period: ChartPeriod,
-    referenceDate?: Date
+    referenceDate?: Date,
+    scope?: TransactionScope
   ): PeriodSummary => {
-    const periodTransactions = getTransactionsByPeriod(period, referenceDate);
-
-    const expenses = periodTransactions.filter((t) => t.type === 'expense');
-    const incomes = periodTransactions.filter((t) => t.type === 'income');
-
-    const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
-    const totalIncome = incomes.reduce((sum, t) => sum + t.amount, 0);
-
-    // Group expenses by category
-    const expensesByCategory = expenses.reduce((acc, t) => {
-      acc[t.categoryId] = (acc[t.categoryId] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byCategory: CategoryTotal[] = Object.entries(expensesByCategory).map(
-      ([categoryId, total]) => {
-        const category = categories.find((c) => c.id === categoryId);
-        return {
-          categoryId,
-          categoryName: category?.name || categoryId,
-          total,
-          percentage: totalExpenses > 0 ? (total / totalExpenses) * 100 : 0,
-          color: category?.color || '#6B7280',
-        };
-      }
-    );
-
-    // Sort by total descending
-    byCategory.sort((a, b) => b.total - a.total);
-
-    return {
-      totalExpenses,
-      totalIncome,
-      netBalance: totalIncome - totalExpenses,
-      byCategory,
-    };
+    const periodTransactions = getTransactionsByPeriod(period, referenceDate, scope);
+    return computePeriodSummary(periodTransactions, categories);
   };
 
   const getRecentTransactions = (limit: number = 5): Transaction[] => {
@@ -93,6 +117,8 @@ export const useTransactions = () => {
     period: ChartPeriod,
     type: 'expense' | 'income' = 'expense'
   ): { date: string; total: number }[] => {
+    // `type` solo puede ser 'expense' | 'income', las transferencias quedan
+    // excluidas de forma natural por este filtro.
     const periodTransactions = getTransactionsByPeriod(period).filter(
       (t) => t.type === type
     );

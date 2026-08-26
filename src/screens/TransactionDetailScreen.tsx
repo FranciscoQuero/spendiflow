@@ -73,7 +73,7 @@ export const TransactionDetailScreen: React.FC = () => {
   };
 
   const getCategoryName = () => {
-    if (!category) return transaction.categoryId;
+    if (!category) return transaction.categoryId || '';
     return settings.language === 'es' ? category.name : category.nameEn;
   };
 

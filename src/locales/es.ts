@@ -181,6 +181,32 @@ export default {
     today: 'Hoy',
     yesterday: 'Ayer',
     currency: '€',
+    underConstruction: 'En construcción',
+  },
+
+  // Transfers
+  transfers: {
+    title: 'Transferencias',
+  },
+
+  // Provisions (huchas)
+  provisions: {
+    title: 'Huchas',
+  },
+
+  // Recurring rules
+  recurring: {
+    title: 'Recurrentes',
+  },
+
+  // Month close
+  monthClose: {
+    title: 'Cierre de mes',
+  },
+
+  // Planned events
+  plannedEvents: {
+    title: 'Calendario financiero',
   },
 
   // Months

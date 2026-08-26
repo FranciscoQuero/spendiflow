@@ -98,6 +98,7 @@ export const DebtDetailScreen: React.FC = () => {
       amount: parsedAmount,
       date: getDateISO(),
       note: note.trim() || undefined,
+      kind: 'installment',
     });
 
     setPaymentAmount('');
