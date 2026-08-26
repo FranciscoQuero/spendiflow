@@ -173,6 +173,8 @@ export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   /** Objetivo global de gasto al mes (solo gastos con scope 'personal'). undefined = sin presupuesto. */
   monthlyBudget?: number;
+  // Cuenta preseleccionada al crear un gasto/ingreso. `undefined` = "Ninguna".
+  defaultAccountId?: string;
 }
 
 // Chart Data Types

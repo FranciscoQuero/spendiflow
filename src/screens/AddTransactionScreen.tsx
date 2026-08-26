@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,14 @@ import * as Haptics from 'expo-haptics';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { AmountInput } from '../components/AmountInput';
+import { AmountInput, AmountInputHandle } from '../components/AmountInput';
 import { CategoryChip } from '../components/CategoryChip';
 import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO, formatDateLong } from '../utils/formatters';
+import { rankCategoriesByUsage, suggestFromConcept, ConceptSuggestion } from '../utils/suggestions';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 import { TransactionScope } from '../types';
@@ -72,12 +73,27 @@ export const AddTransactionScreen: React.FC = () => {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(
     existing?.subcategoryId ?? null
   );
-  const [accountId, setAccountId] = useState<string | null>(existing?.accountId ?? null);
+  const [accountId, setAccountId] = useState<string | null>(() => {
+    if (existing) return existing.accountId ?? null;
+    // Cuenta por defecto: solo aplica al crear un gasto/ingreso (no en
+    // transferencias) y solo si esa cuenta sigue activa (no archivada).
+    if (
+      !isTransfer &&
+      settings.defaultAccountId &&
+      bankAccounts.some((a) => a.id === settings.defaultAccountId && !a.archived)
+    ) {
+      return settings.defaultAccountId;
+    }
+    return null;
+  });
   const [toAccountId, setToAccountId] = useState<string | null>(existing?.toAccountId ?? null);
   const [scope, setScope] = useState<TransactionScope>(existing?.scope ?? 'personal');
   const [date, setDate] = useState<Date>(existing ? new Date(existing.date) : new Date());
   const [note, setNote] = useState(existing?.note ?? '');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [conceptSuggestions, setConceptSuggestions] = useState<ConceptSuggestion[]>([]);
+
+  const amountInputRef = useRef<AmountInputHandle>(null);
 
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
@@ -87,8 +103,12 @@ export const AddTransactionScreen: React.FC = () => {
   );
 
   const filteredCategories = useMemo(
-    () => categories.filter((c) => c.type === type),
-    [categories, type]
+    () => rankCategoriesByUsage(
+      categories.filter((c) => c.type === type),
+      transactions,
+      type
+    ),
+    [categories, transactions, type]
   );
 
   const selectedCategory = useMemo(
@@ -113,6 +133,29 @@ export const AddTransactionScreen: React.FC = () => {
     Haptics.selectionAsync();
     setSelectedCategoryId(categoryId);
     setSelectedSubcategoryId(null);
+  };
+
+  const handleConceptChange = (text: string) => {
+    setConcept(text);
+    if (isTransfer) {
+      setConceptSuggestions([]);
+      return;
+    }
+    const sameTypeTransactions = transactions.filter((tr) => tr.type === type);
+    setConceptSuggestions(suggestFromConcept(text, sameTypeTransactions));
+  };
+
+  const handleSuggestionSelect = (suggestion: ConceptSuggestion) => {
+    Haptics.selectionAsync();
+    setConcept(suggestion.concept);
+    setConceptSuggestions([]);
+    if (suggestion.categoryId) {
+      setSelectedCategoryId(suggestion.categoryId);
+      setSelectedSubcategoryId(suggestion.subcategoryId ?? null);
+    }
+    if (suggestion.accountId) {
+      setAccountId(suggestion.accountId);
+    }
   };
 
   const handleSubcategorySelect = (subcategoryId: string) => {
@@ -149,41 +192,50 @@ export const AddTransactionScreen: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
+  /**
+   * Valida y guarda la transacción actual. Devuelve `true` si se guardó con
+   * éxito (para que el llamador decida qué hacer después: volver atrás, o
+   * resetear el formulario para seguir añadiendo).
+   */
+  const trySave = (): boolean => {
     const parsedAmount = parseNumber(amount);
 
     if (parsedAmount <= 0) {
       Alert.alert(t('common.error'), t('addTransaction.errorAmount'));
-      return;
+      return false;
     }
 
     if (isTransfer) {
       if (!accountId) {
         Alert.alert(t('common.error'), t('addTransaction.errorFromAccount'));
-        return;
+        return false;
       }
       if (!toAccountId) {
         Alert.alert(t('common.error'), t('addTransaction.errorToAccount'));
-        return;
+        return false;
       }
       if (accountId === toAccountId) {
         Alert.alert(t('common.error'), t('addTransaction.errorSameAccount'));
-        return;
+        return false;
       }
     } else {
-      if (!concept.trim()) {
-        Alert.alert(t('common.error'), t('addTransaction.errorConcept'));
-        return;
-      }
       if (!selectedCategoryId) {
         Alert.alert(t('common.error'), t('addTransaction.errorCategory'));
-        return;
+        return false;
       }
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const finalConcept = concept.trim() || (isTransfer ? t('addTransaction.conceptPlaceholderTransfer') : '');
+    // Concepto opcional: si se deja vacío, se usa el nombre de la categoría
+    // activa (o "Transferencia" en transferencias).
+    const categoryName = selectedCategory
+      ? settings.language === 'es'
+        ? selectedCategory.name
+        : selectedCategory.nameEn
+      : '';
+    const finalConcept =
+      concept.trim() || (isTransfer ? t('addTransaction.conceptPlaceholderTransfer') : categoryName);
 
     const payload = {
       type,
@@ -206,21 +258,45 @@ export const AddTransactionScreen: React.FC = () => {
       } else {
         addTransaction(payload);
       }
-      navigation.goBack();
+      return true;
     } catch (error) {
       Alert.alert(t('common.error'), String(error));
+      return false;
     }
+  };
+
+  const handleSave = () => {
+    if (trySave()) {
+      navigation.goBack();
+    }
+  };
+
+  const handleSaveAndAddAnother = () => {
+    if (!trySave()) return;
+
+    // Mantiene tipo, fecha y cuenta; limpia el resto para el siguiente alta.
+    setAmount('');
+    setConcept('');
+    setSelectedCategoryId(null);
+    setSelectedSubcategoryId(null);
+    setConceptSuggestions([]);
+    setNote('');
+
+    // Re-enfoca el importe para poder seguir tecleando gastos sin tocar la pantalla.
+    requestAnimationFrame(() => amountInputRef.current?.focus());
   };
 
   const canSave = isTransfer
     ? parseNumber(amount) > 0 && !!accountId && !!toAccountId && accountId !== toAccountId
-    : parseNumber(amount) > 0 && !!concept.trim() && !!selectedCategoryId;
+    : parseNumber(amount) > 0 && !!selectedCategoryId;
 
   const saveButtonStyle = isTransfer
     ? styles.transferButton
     : isExpense
     ? styles.expenseButton
     : styles.incomeButton;
+
+  const accentColor = isTransfer ? theme.primary : isExpense ? theme.expense : theme.income;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -242,6 +318,7 @@ export const AddTransactionScreen: React.FC = () => {
         >
           {/* Amount Input */}
           <AmountInput
+            ref={amountInputRef}
             value={amount}
             onChangeText={setAmount}
             type={isTransfer ? 'transfer' : type === 'income' ? 'income' : 'expense'}
@@ -254,7 +331,7 @@ export const AddTransactionScreen: React.FC = () => {
             <TextInput
               style={styles.textInput}
               value={concept}
-              onChangeText={setConcept}
+              onChangeText={handleConceptChange}
               placeholder={
                 isTransfer
                   ? t('addTransaction.conceptPlaceholderTransfer')
@@ -262,6 +339,20 @@ export const AddTransactionScreen: React.FC = () => {
               }
               placeholderTextColor={theme.textSecondary}
             />
+            {conceptSuggestions.length > 0 && (
+              <View style={styles.chipContainer}>
+                {conceptSuggestions.map((suggestion) => (
+                  <Pressable
+                    key={suggestion.concept}
+                    style={styles.suggestionChip}
+                    onPress={() => handleSuggestionSelect(suggestion)}
+                  >
+                    <Ionicons name="time-outline" size={14} color={theme.primary} />
+                    <Text style={styles.suggestionChipText}>{suggestion.concept}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Date Selection */}
@@ -526,13 +617,36 @@ export const AddTransactionScreen: React.FC = () => {
 
         {/* Save Button */}
         <View style={styles.footer}>
-          <Pressable
-            style={[styles.saveButton, saveButtonStyle, !canSave && styles.disabledButton]}
-            onPress={handleSave}
-            disabled={!canSave}
-          >
-            <Text style={styles.saveButtonText}>{t('addTransaction.save')}</Text>
-          </Pressable>
+          <View style={styles.footerRow}>
+            {!isEditing && (
+              <Pressable
+                style={[
+                  styles.saveButton,
+                  styles.secondaryButton,
+                  { borderColor: accentColor },
+                  !canSave && styles.disabledButton,
+                ]}
+                onPress={handleSaveAndAddAnother}
+                disabled={!canSave}
+              >
+                <Text style={[styles.saveButtonText, { color: accentColor }]}>
+                  {t('addTransaction.saveAndAddAnother')}
+                </Text>
+              </Pressable>
+            )}
+            <Pressable
+              style={[
+                styles.saveButton,
+                styles.primaryButton,
+                saveButtonStyle,
+                !canSave && styles.disabledButton,
+              ]}
+              onPress={handleSave}
+              disabled={!canSave}
+            >
+              <Text style={styles.saveButtonText}>{t('addTransaction.save')}</Text>
+            </Pressable>
+          </View>
         </View>
       </FormScrollView>
     </SafeAreaView>
@@ -601,6 +715,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: `${theme.primary}14`,
+    marginTop: 8,
+    marginRight: 8,
+  },
+  suggestionChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.primary,
   },
   subChip: {
     paddingHorizontal: 14,
@@ -732,10 +862,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.border,
   },
+  footerRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   saveButton: {
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
+  },
+  primaryButton: {
+    flex: 1,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
   },
   expenseButton: {
     backgroundColor: theme.expense,

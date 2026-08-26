@@ -225,6 +225,8 @@ const initialSettings: AppSettings = {
   currency: 'EUR',
   currencySymbol: '€',
   theme: 'system',
+  // Sin cuenta por defecto hasta que el usuario elija una en Ajustes.
+  defaultAccountId: undefined,
 };
 
 export const STORE_VERSION = 3;
@@ -307,6 +309,10 @@ export const migrate = (persistedState: unknown): StoreState => {
     ? (state.plannedEvents as PlannedEvent[])
     : [];
 
+  // El spread de `initialSettings` primero rellena de forma no destructiva
+  // cualquier campo nuevo (p.ej. `defaultAccountId`) que no existiera en un
+  // estado persistido antiguo, sin tocar los valores ya guardados por el
+  // usuario.
   const settings =
     state.settings && typeof state.settings === 'object'
       ? { ...initialSettings, ...(state.settings as Partial<AppSettings>) }
