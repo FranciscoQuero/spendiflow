@@ -16,11 +16,12 @@ export default {
 
   // Home Screen
   home: {
-    welcome: 'Bienvenido',
     monthlySummary: 'Resumen del mes',
     totalExpenses: 'Total gastos',
     totalIncome: 'Total ingresos',
     netBalance: 'Balance neto',
+    netWorth: 'Patrimonio neto',
+    netWorthBreakdown: 'Cuentas %{accounts} · Inversiones %{investments} · Deudas %{debts}',
     quickActions: 'Acciones rápidas',
     addExpense: 'Añadir gasto',
     addIncome: 'Añadir ingreso',
@@ -152,6 +153,11 @@ export default {
     scopeAll: 'Todos',
     scopePersonal: 'Personal',
     scopeBusiness: 'Negocio',
+    viewFlow: 'Flujo',
+    viewNetWorth: 'Patrimonio',
+    netWorthChartTitle: 'Evolución del patrimonio',
+    netWorthListTitle: 'Histórico mensual',
+    netWorthNoData: 'Todavía no hay datos de patrimonio. Haz tu primer cierre de mes para empezar a verlo aquí.',
   },
 
   // Accounts

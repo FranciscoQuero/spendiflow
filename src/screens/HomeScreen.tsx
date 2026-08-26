@@ -9,12 +9,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
 import { TransactionItem } from '../components/TransactionItem';
 import { QuickActionButton } from '../components/QuickActionButton';
 import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useTransactions } from '../hooks/useTransactions';
-import { useAccounts } from '../hooks/useAccounts';
+import { useAccounts, getMyShareBalance, getInvestmentValue } from '../hooks/useAccounts';
+import { getDebtsNetImpact } from '../utils/monthClose';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { colors, Theme } from '../theme/colors';
@@ -53,7 +55,7 @@ export const HomeScreen: React.FC = () => {
   const skipRecurrence = useStore((state) => state.skipRecurrence);
   const plannedEvents = useStore((state) => state.plannedEvents);
   const { getPeriodSummary, getRecentTransactions } = useTransactions();
-  const { getDueRecurrences } = useAccounts();
+  const { bankAccounts, investments, debts, getDueRecurrences, getNetWorth } = useAccounts();
 
   const summary = getPeriodSummary('month');
   const recentTransactions = getRecentTransactions(5);
@@ -61,6 +63,20 @@ export const HomeScreen: React.FC = () => {
   const visibleDueRecurrences = dueRecurrences.slice(0, MAX_VISIBLE_DUE);
   const extraDueCount = dueRecurrences.length - visibleDueRecurrences.length;
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
+
+  const netWorth = getNetWorth();
+  const accountsTotal = useMemo(
+    () =>
+      bankAccounts
+        .filter((a) => !a.archived)
+        .reduce((sum, a) => sum + getMyShareBalance(a), 0),
+    [bankAccounts]
+  );
+  const investmentsTotal = useMemo(
+    () => investments.reduce((sum, i) => sum + getInvestmentValue(i), 0),
+    [investments]
+  );
+  const debtsNet = useMemo(() => getDebtsNetImpact(debts), [debts]);
 
   const upcomingPlannedEvents = useMemo(
     () => getUpcomingPlannedEvents(plannedEvents),
@@ -76,12 +92,6 @@ export const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.greeting}>{t('home.welcome')}</Text>
-          <Text style={styles.appName}>{t('app.name')}</Text>
-        </View>
-
         {/* Monthly Summary Card */}
         <Card style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>{t('home.monthlySummary')}</Text>
@@ -114,6 +124,30 @@ export const HomeScreen: React.FC = () => {
               {formatCurrency(summary.netBalance, settings.currencySymbol, locale)}
             </Text>
           </View>
+        </Card>
+
+        {/* Net Worth (secondary to the monthly summary above) */}
+        <Card
+          style={styles.netWorthCard}
+          pressable
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Accounts' })}
+        >
+          <View style={styles.netWorthHeader}>
+            <Text style={styles.netWorthLabel}>{t('home.netWorth')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+          </View>
+          <Text style={styles.netWorthValue}>
+            {formatCurrency(netWorth, settings.currencySymbol, locale)}
+          </Text>
+          <Text style={styles.netWorthBreakdown}>
+            {t('home.netWorthBreakdown', {
+              accounts: formatCurrency(accountsTotal, settings.currencySymbol, locale),
+              investments: formatCurrency(investmentsTotal, settings.currencySymbol, locale),
+              debts:
+                (debtsNet >= 0 ? '+' : '') +
+                formatCurrency(debtsNet, settings.currencySymbol, locale),
+            })}
+          </Text>
         </Card>
 
         {/* Pending Recurrences */}
@@ -305,21 +339,34 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 20,
     paddingBottom: 100,
   },
-  header: {
-    marginBottom: 24,
-  },
-  greeting: {
-    fontSize: 16,
-    color: theme.textSecondary,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.text,
-    marginTop: 4,
-  },
   summaryCard: {
     marginBottom: 24,
+  },
+  netWorthCard: {
+    marginBottom: 24,
+  },
+  netWorthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  netWorthLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  netWorthValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: theme.text,
+    marginTop: 6,
+  },
+  netWorthBreakdown: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    marginTop: 4,
   },
   pendingCard: {
     marginBottom: 24,

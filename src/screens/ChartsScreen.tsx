@@ -8,14 +8,16 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PieChart, BarChart } from 'react-native-chart-kit';
+import { PieChart, BarChart, LineChart } from 'react-native-chart-kit';
 import { Card } from '../components/Card';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { useTransactions } from '../hooks/useTransactions';
+import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme, hexToRgba } from '../theme/colors';
-import { formatCurrency, formatPercentage } from '../utils/formatters';
+import { formatCurrency, formatPercentage, getMonthName } from '../utils/formatters';
+import { computeMonthlyNetWorthSeries } from '../utils/netWorthHistory';
 import { ChartPeriod, TransactionScope } from '../types';
 import { t } from '../locales/i18n';
 
@@ -23,15 +25,23 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 40;
 
 type ScopeFilter = TransactionScope | 'all';
+type ChartsView = 'flow' | 'netWorth';
+
+const formatMonthLabel = (year: number, month: number, locale: string): string => {
+  const name = getMonthName(month, locale, 'long');
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
+};
 
 export const ChartsScreen: React.FC = () => {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
+  const [view, setView] = useState<ChartsView>('flow');
   const [period, setPeriod] = useState<ChartPeriod>('month');
   const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
   const settings = useStore((state) => state.settings);
   const { getPeriodSummary, getDailyTotals } = useTransactions();
+  const { bankAccounts, investments, debts } = useAccounts();
 
   const scope = scopeFilter === 'all' ? undefined : scopeFilter;
 
@@ -81,6 +91,37 @@ export const ChartsScreen: React.FC = () => {
     };
   }, [dailyTotals]);
 
+  const netWorthSeries = useMemo(
+    () => computeMonthlyNetWorthSeries(bankAccounts, investments, debts),
+    [bankAccounts, investments, debts]
+  );
+
+  const netWorthLineData = useMemo(
+    () => ({
+      labels: netWorthSeries.map((p) => `${p.month}/${String(p.year).slice(2)}`),
+      datasets: [
+        {
+          data: netWorthSeries.map((p) => p.value),
+          color: (opacity = 1) => hexToRgba(theme.primary, opacity),
+          strokeWidth: 2,
+        },
+      ],
+    }),
+    [netWorthSeries, theme.primary]
+  );
+
+  // Fila mes -> valor -> variación vs. mes anterior, más reciente primero.
+  const netWorthRows = useMemo(
+    () =>
+      netWorthSeries
+        .map((point, index) => ({
+          ...point,
+          diff: index > 0 ? point.value - netWorthSeries[index - 1].value : undefined,
+        }))
+        .reverse(),
+    [netWorthSeries]
+  );
+
   const PeriodTab = ({ value, label }: { value: ChartPeriod; label: string }) => (
     <Pressable
       style={[styles.periodTab, period === value && styles.periodTabActive]}
@@ -109,112 +150,200 @@ export const ChartsScreen: React.FC = () => {
           <Text style={styles.title}>{t('charts.title')}</Text>
         </View>
 
-        {/* Period Selector */}
-        <View style={styles.periodSelector}>
-          <PeriodTab value="week" label={t('charts.week')} />
-          <PeriodTab value="month" label={t('charts.month')} />
-          <PeriodTab value="quarter" label={t('charts.quarter')} />
-          <PeriodTab value="year" label={t('charts.year')} />
-        </View>
-
-        {/* Scope Filter */}
-        <View style={styles.scopeSelector}>
+        {/* View Switcher */}
+        <View style={styles.viewSelector}>
           <SegmentedControl
-            value={scopeFilter}
-            onChange={setScopeFilter}
+            value={view}
+            onChange={setView}
             options={[
-              { value: 'all', label: t('charts.scopeAll') },
-              { value: 'personal', label: t('charts.scopePersonal') },
-              { value: 'business', label: t('charts.scopeBusiness') },
+              { value: 'flow', label: t('charts.viewFlow') },
+              { value: 'netWorth', label: t('charts.viewNetWorth') },
             ]}
           />
         </View>
 
-        {/* Total Summary */}
-        <Card style={styles.summaryCard}>
-          <Text style={styles.totalLabel}>{t('charts.total')}</Text>
-          <Text style={styles.totalValue}>
-            {formatCurrency(summary.totalExpenses, settings.currencySymbol, locale)}
-          </Text>
-        </Card>
+        {view === 'flow' ? (
+          <>
+            {/* Period Selector */}
+            <View style={styles.periodSelector}>
+              <PeriodTab value="week" label={t('charts.week')} />
+              <PeriodTab value="month" label={t('charts.month')} />
+              <PeriodTab value="quarter" label={t('charts.quarter')} />
+              <PeriodTab value="year" label={t('charts.year')} />
+            </View>
 
-        {/* Pie Chart */}
-        <Card style={styles.chartCard}>
-          <Text style={styles.chartTitle}>{t('charts.byCategory')}</Text>
-          {summary.totalExpenses > 0 ? (
-            <View style={styles.pieContainer}>
-              <PieChart
-                data={pieData}
-                width={CHART_WIDTH - 32}
-                height={200}
-                chartConfig={{
-                  color: (opacity = 1) => hexToRgba(theme.text, opacity),
-                }}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="15"
-                hasLegend={false}
+            {/* Scope Filter */}
+            <View style={styles.scopeSelector}>
+              <SegmentedControl
+                value={scopeFilter}
+                onChange={setScopeFilter}
+                options={[
+                  { value: 'all', label: t('charts.scopeAll') },
+                  { value: 'personal', label: t('charts.scopePersonal') },
+                  { value: 'business', label: t('charts.scopeBusiness') },
+                ]}
               />
             </View>
-          ) : (
-            <Text style={styles.noDataText}>{t('charts.noData')}</Text>
-          )}
-        </Card>
 
-        {/* Category Breakdown */}
-        {summary.byCategory.length > 0 && (
-          <Card style={styles.chartCard}>
-            {summary.byCategory.map((cat, index) => (
-              <View key={cat.categoryId} style={styles.categoryRow}>
-                <View style={styles.categoryInfo}>
-                  <View
-                    style={[styles.categoryDot, { backgroundColor: cat.color }]}
+            {/* Total Summary */}
+            <Card style={styles.summaryCard}>
+              <Text style={styles.totalLabel}>{t('charts.total')}</Text>
+              <Text style={styles.totalValue}>
+                {formatCurrency(summary.totalExpenses, settings.currencySymbol, locale)}
+              </Text>
+            </Card>
+
+            {/* Pie Chart */}
+            <Card style={styles.chartCard}>
+              <Text style={styles.chartTitle}>{t('charts.byCategory')}</Text>
+              {summary.totalExpenses > 0 ? (
+                <View style={styles.pieContainer}>
+                  <PieChart
+                    data={pieData}
+                    width={CHART_WIDTH - 32}
+                    height={200}
+                    chartConfig={{
+                      color: (opacity = 1) => hexToRgba(theme.text, opacity),
+                    }}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    paddingLeft="15"
+                    hasLegend={false}
                   />
-                  <Text style={styles.categoryName}>{cat.categoryName}</Text>
                 </View>
-                <View style={styles.categoryValues}>
-                  <Text style={styles.categoryAmount}>
-                    {formatCurrency(cat.total, settings.currencySymbol, locale)}
-                  </Text>
-                  <Text style={styles.categoryPercent}>
-                    {formatPercentage(cat.percentage)}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </Card>
-        )}
+              ) : (
+                <Text style={styles.noDataText}>{t('charts.noData')}</Text>
+              )}
+            </Card>
 
-        {/* Bar Chart - Trend */}
-        <Card style={styles.chartCard}>
-          <Text style={styles.chartTitle}>{t('charts.trend')}</Text>
-          {dailyTotals.length > 0 ? (
-            <BarChart
-              data={barData}
-              width={CHART_WIDTH - 32}
-              height={200}
-              yAxisLabel=""
-              yAxisSuffix={settings.currencySymbol}
-              chartConfig={{
-                backgroundColor: theme.card,
-                backgroundGradientFrom: theme.card,
-                backgroundGradientTo: theme.card,
-                decimalPlaces: 0,
-                color: (opacity = 1) => hexToRgba(theme.expense, opacity),
-                labelColor: (opacity = 1) => hexToRgba(theme.textSecondary, opacity),
-                style: {
-                  borderRadius: 16,
-                },
-                barPercentage: 0.6,
-              }}
-              style={styles.barChart}
-              showValuesOnTopOfBars
-              fromZero
-            />
-          ) : (
-            <Text style={styles.noDataText}>{t('charts.noData')}</Text>
-          )}
-        </Card>
+            {/* Category Breakdown */}
+            {summary.byCategory.length > 0 && (
+              <Card style={styles.chartCard}>
+                {summary.byCategory.map((cat, index) => (
+                  <View key={cat.categoryId} style={styles.categoryRow}>
+                    <View style={styles.categoryInfo}>
+                      <View
+                        style={[styles.categoryDot, { backgroundColor: cat.color }]}
+                      />
+                      <Text style={styles.categoryName}>{cat.categoryName}</Text>
+                    </View>
+                    <View style={styles.categoryValues}>
+                      <Text style={styles.categoryAmount}>
+                        {formatCurrency(cat.total, settings.currencySymbol, locale)}
+                      </Text>
+                      <Text style={styles.categoryPercent}>
+                        {formatPercentage(cat.percentage)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </Card>
+            )}
+
+            {/* Bar Chart - Trend */}
+            <Card style={styles.chartCard}>
+              <Text style={styles.chartTitle}>{t('charts.trend')}</Text>
+              {dailyTotals.length > 0 ? (
+                <BarChart
+                  data={barData}
+                  width={CHART_WIDTH - 32}
+                  height={200}
+                  yAxisLabel=""
+                  yAxisSuffix={settings.currencySymbol}
+                  chartConfig={{
+                    backgroundColor: theme.card,
+                    backgroundGradientFrom: theme.card,
+                    backgroundGradientTo: theme.card,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => hexToRgba(theme.expense, opacity),
+                    labelColor: (opacity = 1) => hexToRgba(theme.textSecondary, opacity),
+                    style: {
+                      borderRadius: 16,
+                    },
+                    barPercentage: 0.6,
+                  }}
+                  style={styles.barChart}
+                  showValuesOnTopOfBars
+                  fromZero
+                />
+              ) : (
+                <Text style={styles.noDataText}>{t('charts.noData')}</Text>
+              )}
+            </Card>
+          </>
+        ) : (
+          <>
+            {/* Net Worth Chart */}
+            <Card style={styles.chartCard}>
+              <Text style={styles.chartTitle}>{t('charts.netWorthChartTitle')}</Text>
+              {netWorthSeries.length > 0 ? (
+                <LineChart
+                  data={netWorthLineData}
+                  width={CHART_WIDTH - 32}
+                  height={200}
+                  yAxisLabel=""
+                  yAxisSuffix={settings.currencySymbol}
+                  chartConfig={{
+                    backgroundColor: theme.card,
+                    backgroundGradientFrom: theme.card,
+                    backgroundGradientTo: theme.card,
+                    decimalPlaces: 0,
+                    color: (opacity = 1) => hexToRgba(theme.primary, opacity),
+                    labelColor: (opacity = 1) => hexToRgba(theme.textSecondary, opacity),
+                    style: {
+                      borderRadius: 16,
+                    },
+                    propsForDots: {
+                      r: '4',
+                      strokeWidth: '2',
+                      stroke: theme.primary,
+                    },
+                  }}
+                  style={styles.barChart}
+                  bezier
+                />
+              ) : (
+                <Text style={styles.noDataText}>{t('charts.netWorthNoData')}</Text>
+              )}
+            </Card>
+
+            {/* Net Worth Monthly List */}
+            {netWorthRows.length > 0 && (
+              <Card style={styles.chartCard}>
+                <Text style={styles.chartTitle}>{t('charts.netWorthListTitle')}</Text>
+                {netWorthRows.map((row, index) => (
+                  <View
+                    key={`${row.year}-${row.month}`}
+                    style={[
+                      styles.netWorthRow,
+                      index === netWorthRows.length - 1 && styles.netWorthRowLast,
+                    ]}
+                  >
+                    <Text style={styles.netWorthRowMonth}>
+                      {formatMonthLabel(row.year, row.month, locale)}
+                    </Text>
+                    <View style={styles.netWorthRowValues}>
+                      <Text style={styles.netWorthRowValue}>
+                        {formatCurrency(row.value, settings.currencySymbol, locale)}
+                      </Text>
+                      {row.diff !== undefined && (
+                        <Text
+                          style={[
+                            styles.netWorthRowDiff,
+                            row.diff >= 0 ? styles.incomeValue : styles.expenseValue,
+                          ]}
+                        >
+                          {row.diff >= 0 ? '+' : ''}
+                          {formatCurrency(row.diff, settings.currencySymbol, locale)}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </Card>
+            )}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -336,5 +465,41 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   barChart: {
     marginVertical: 8,
     borderRadius: 16,
+  },
+  viewSelector: {
+    marginBottom: 20,
+  },
+  netWorthRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  netWorthRowLast: {
+    borderBottomWidth: 0,
+  },
+  netWorthRowMonth: {
+    fontSize: 15,
+    color: theme.text,
+  },
+  netWorthRowValues: {
+    alignItems: 'flex-end',
+  },
+  netWorthRowValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.text,
+  },
+  netWorthRowDiff: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  incomeValue: {
+    color: theme.income,
+  },
+  expenseValue: {
+    color: theme.expense,
   },
 });

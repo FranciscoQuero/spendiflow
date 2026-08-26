@@ -16,11 +16,12 @@ export default {
 
   // Home Screen
   home: {
-    welcome: 'Welcome',
     monthlySummary: 'Monthly summary',
     totalExpenses: 'Total expenses',
     totalIncome: 'Total income',
     netBalance: 'Net balance',
+    netWorth: 'Net worth',
+    netWorthBreakdown: 'Accounts %{accounts} · Investments %{investments} · Debts %{debts}',
     quickActions: 'Quick actions',
     addExpense: 'Add expense',
     addIncome: 'Add income',
@@ -152,6 +153,11 @@ export default {
     scopeAll: 'All',
     scopePersonal: 'Personal',
     scopeBusiness: 'Business',
+    viewFlow: 'Flow',
+    viewNetWorth: 'Net worth',
+    netWorthChartTitle: 'Net worth over time',
+    netWorthListTitle: 'Monthly history',
+    netWorthNoData: 'No net worth data yet. Do your first month close to start seeing it here.',
   },
 
   // Accounts
