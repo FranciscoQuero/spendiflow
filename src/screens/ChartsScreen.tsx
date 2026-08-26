@@ -5,12 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
-  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart, LineChart } from 'react-native-chart-kit';
 import { Card } from '../components/Card';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { Chip } from '../components/Chip';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
@@ -24,8 +24,14 @@ import { t } from '../locales/i18n';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 40;
 
-type ScopeFilter = TransactionScope | 'all';
 type ChartsView = 'flow' | 'netWorth';
+
+const PERIOD_OPTIONS: { value: ChartPeriod; labelKey: 'charts.week' | 'charts.month' | 'charts.quarter' | 'charts.year' }[] = [
+  { value: 'week', labelKey: 'charts.week' },
+  { value: 'month', labelKey: 'charts.month' },
+  { value: 'quarter', labelKey: 'charts.quarter' },
+  { value: 'year', labelKey: 'charts.year' },
+];
 
 const formatMonthLabel = (year: number, month: number, locale: string): string => {
   const name = getMonthName(month, locale, 'long');
@@ -38,20 +44,22 @@ export const ChartsScreen: React.FC = () => {
 
   const [view, setView] = useState<ChartsView>('flow');
   const [period, setPeriod] = useState<ChartPeriod>('month');
-  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
+  const [scopeFilter, setScopeFilter] = useState<TransactionScope | undefined>(undefined);
   const settings = useStore((state) => state.settings);
   const { getPeriodSummary, getDailyTotals } = useTransactions();
   const { bankAccounts, investments, debts } = useAccounts();
 
-  const scope = scopeFilter === 'all' ? undefined : scopeFilter;
+  const toggleScope = (value: TransactionScope) => {
+    setScopeFilter((prev) => (prev === value ? undefined : value));
+  };
 
   const summary = useMemo(
-    () => getPeriodSummary(period, undefined, scope),
-    [period, scope, getPeriodSummary]
+    () => getPeriodSummary(period, undefined, scopeFilter),
+    [period, scopeFilter, getPeriodSummary]
   );
   const dailyTotals = useMemo(
-    () => getDailyTotals(period, 'expense', scope),
-    [period, scope, getDailyTotals]
+    () => getDailyTotals(period, 'expense', scopeFilter),
+    [period, scopeFilter, getDailyTotals]
   );
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
@@ -122,22 +130,6 @@ export const ChartsScreen: React.FC = () => {
     [netWorthSeries]
   );
 
-  const PeriodTab = ({ value, label }: { value: ChartPeriod; label: string }) => (
-    <Pressable
-      style={[styles.periodTab, period === value && styles.periodTabActive]}
-      onPress={() => setPeriod(value)}
-    >
-      <Text
-        style={[
-          styles.periodTabText,
-          period === value && styles.periodTabTextActive,
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -164,25 +156,38 @@ export const ChartsScreen: React.FC = () => {
 
         {view === 'flow' ? (
           <>
-            {/* Period Selector */}
-            <View style={styles.periodSelector}>
-              <PeriodTab value="week" label={t('charts.week')} />
-              <PeriodTab value="month" label={t('charts.month')} />
-              <PeriodTab value="quarter" label={t('charts.quarter')} />
-              <PeriodTab value="year" label={t('charts.year')} />
-            </View>
-
-            {/* Scope Filter */}
-            <View style={styles.scopeSelector}>
-              <SegmentedControl
-                value={scopeFilter}
-                onChange={setScopeFilter}
-                options={[
-                  { value: 'all', label: t('charts.scopeAll') },
-                  { value: 'personal', label: t('charts.scopePersonal') },
-                  { value: 'business', label: t('charts.scopeBusiness') },
-                ]}
-              />
+            {/* Filtros: período (chips) + ámbito (chips de filtro togglables) */}
+            <View style={styles.filterRow}>
+              <View style={styles.periodGroup}>
+                {PERIOD_OPTIONS.map((option) => (
+                  <Chip
+                    key={option.value}
+                    label={t(option.labelKey)}
+                    selected={period === option.value}
+                    onPress={() => setPeriod(option.value)}
+                    variant="tinted"
+                    dense
+                  />
+                ))}
+              </View>
+              <View style={styles.scopeGroup}>
+                <Chip
+                  label={t('charts.scopePersonal')}
+                  selected={scopeFilter === 'personal'}
+                  onPress={() => toggleScope('personal')}
+                  icon="person-outline"
+                  variant="tinted"
+                  dense
+                />
+                <Chip
+                  label={t('charts.scopeBusiness')}
+                  selected={scopeFilter === 'business'}
+                  onPress={() => toggleScope('business')}
+                  icon="briefcase-outline"
+                  variant="tinted"
+                  dense
+                />
+              </View>
             </View>
 
             {/* Total Summary */}
@@ -362,39 +367,29 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingBottom: 100,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: theme.text,
   },
-  periodSelector: {
+  filterRow: {
     flexDirection: 'row',
-    backgroundColor: theme.card,
-    borderRadius: 12,
-    padding: 4,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    rowGap: 8,
     marginBottom: 20,
   },
-  periodTab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+  periodGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
-  periodTabActive: {
-    backgroundColor: theme.primary,
-  },
-  periodTabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.textSecondary,
-  },
-  periodTabTextActive: {
-    color: 'white',
-  },
-  scopeSelector: {
-    marginBottom: 20,
+  scopeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   summaryCard: {
     alignItems: 'center',
@@ -469,7 +464,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 16,
   },
   viewSelector: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   netWorthRow: {
     flexDirection: 'row',

@@ -150,7 +150,6 @@ export default {
     trend: 'Tendencia',
     total: 'Total',
     noData: 'Sin datos para este período',
-    scopeAll: 'Todos',
     scopePersonal: 'Personal',
     scopeBusiness: 'Negocio',
     viewFlow: 'Flujo',
