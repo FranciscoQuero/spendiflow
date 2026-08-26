@@ -227,7 +227,7 @@ const initialSettings: AppSettings = {
   theme: 'system',
 };
 
-const STORE_VERSION = 3;
+export const STORE_VERSION = 3;
 
 const asRecordArray = (value: unknown): Record<string, unknown>[] =>
   Array.isArray(value) ? (value as Record<string, unknown>[]) : [];

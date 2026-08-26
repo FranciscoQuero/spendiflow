@@ -7,7 +7,7 @@
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { migrate } from '../store/useStore';
+import { migrate, STORE_VERSION } from '../store/useStore';
 import {
   Transaction,
   Category,
@@ -21,7 +21,7 @@ import {
 } from '../types';
 
 export const BACKUP_APP_ID = 'spendiflow' as const;
-export const BACKUP_SCHEMA_VERSION = 2;
+export const BACKUP_SCHEMA_VERSION = STORE_VERSION;
 
 export interface BackupData {
   transactions: Transaction[];
