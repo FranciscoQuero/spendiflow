@@ -171,6 +171,8 @@ export interface AppSettings {
   currency: string;
   currencySymbol: string;
   theme: 'light' | 'dark' | 'system';
+  /** Objetivo global de gasto al mes (solo gastos con scope 'personal'). undefined = sin presupuesto. */
+  monthlyBudget?: number;
 }
 
 // Chart Data Types

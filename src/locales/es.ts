@@ -32,6 +32,9 @@ export default {
     pendingRecurrences: 'Pendientes de confirmar',
     moreCount: '+%{count} más',
     upcomingEvents: 'Próximos vencimientos',
+    budgetSpentOf: 'Gastado %{spent} de %{budget}',
+    budgetRemaining: 'Quedan %{amount} · %{days} días',
+    budgetOverBy: 'Presupuesto superado en %{amount}',
   },
 
   // Transactions
@@ -261,6 +264,11 @@ export default {
     themeDark: 'Oscuro',
     themeSystem: 'Sistema',
     currency: 'Moneda',
+    budget: 'Presupuesto',
+    monthlyBudget: 'Presupuesto mensual',
+    monthlyBudgetNotSet: 'Sin definir',
+    monthlyBudgetHint: 'Objetivo de gasto personal al mes. Déjalo vacío para desactivarlo.',
+    monthlyBudgetRemove: 'Quitar presupuesto',
     categories: 'Categorías',
     editCategories: 'Editar categorías',
     expenseCategories: 'Categorías de gastos',

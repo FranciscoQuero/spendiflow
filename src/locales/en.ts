@@ -32,6 +32,9 @@ export default {
     pendingRecurrences: 'Pending confirmations',
     moreCount: '+%{count} more',
     upcomingEvents: 'Upcoming due dates',
+    budgetSpentOf: 'Spent %{spent} of %{budget}',
+    budgetRemaining: '%{amount} left · %{days} days',
+    budgetOverBy: 'Budget exceeded by %{amount}',
   },
 
   // Transactions
@@ -261,6 +264,11 @@ export default {
     themeDark: 'Dark',
     themeSystem: 'System',
     currency: 'Currency',
+    budget: 'Budget',
+    monthlyBudget: 'Monthly budget',
+    monthlyBudgetNotSet: 'Not set',
+    monthlyBudgetHint: 'Personal spending target for the month. Leave it empty to turn it off.',
+    monthlyBudgetRemove: 'Remove budget',
     categories: 'Categories',
     editCategories: 'Edit categories',
     expenseCategories: 'Expense categories',

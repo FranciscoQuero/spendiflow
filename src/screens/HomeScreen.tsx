@@ -17,6 +17,7 @@ import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts, getMyShareBalance, getInvestmentValue } from '../hooks/useAccounts';
 import { getDebtsNetImpact } from '../utils/monthClose';
+import { computeBudgetProgress } from '../utils/budget';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme, hexToRgba } from '../theme/colors';
@@ -58,6 +59,9 @@ export const HomeScreen: React.FC = () => {
   const { bankAccounts, investments, debts, getDueRecurrences, getNetWorth } = useAccounts();
 
   const summary = getPeriodSummary('month');
+  // El presupuesto solo mira gastos personales: los de scope 'business' quedan
+  // fuera del objetivo de gasto personal aunque sí cuenten en el resumen de arriba.
+  const personalMonthSummary = getPeriodSummary('month', undefined, 'personal');
   const recentTransactions = getRecentTransactions(5);
   const dueRecurrences = getDueRecurrences();
   const visibleDueRecurrences = dueRecurrences.slice(0, MAX_VISIBLE_DUE);
@@ -84,6 +88,23 @@ export const HomeScreen: React.FC = () => {
   );
   const visiblePlannedEvents = upcomingPlannedEvents.slice(0, MAX_VISIBLE_DUE);
   const extraPlannedEventsCount = upcomingPlannedEvents.length - visiblePlannedEvents.length;
+
+  const budgetSpent = personalMonthSummary.totalExpenses;
+  const hasBudget = !!settings.monthlyBudget && settings.monthlyBudget > 0;
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const remainingDays = Math.max(daysInMonth - dayOfMonth, 0);
+  const budgetProgress = useMemo(
+    () => computeBudgetProgress(budgetSpent, settings.monthlyBudget, dayOfMonth, daysInMonth),
+    [budgetSpent, settings.monthlyBudget, dayOfMonth, daysInMonth]
+  );
+  const budgetColor =
+    budgetProgress.pace === 'over'
+      ? theme.error
+      : budgetProgress.pace === 'ahead'
+      ? theme.warning
+      : theme.primary;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -124,6 +145,50 @@ export const HomeScreen: React.FC = () => {
               {formatCurrency(summary.netBalance, settings.currencySymbol, locale)}
             </Text>
           </View>
+
+          {hasBudget && (
+            <View style={styles.budgetContainer}>
+              <Text style={styles.budgetLabel}>
+                {t('home.budgetSpentOf', {
+                  spent: formatCurrency(budgetSpent, settings.currencySymbol, locale),
+                  budget: formatCurrency(
+                    settings.monthlyBudget as number,
+                    settings.currencySymbol,
+                    locale
+                  ),
+                })}
+              </Text>
+              <View style={styles.budgetTrack}>
+                <View
+                  style={[
+                    styles.budgetFill,
+                    {
+                      width: `${Math.min(budgetProgress.ratio, 1) * 100}%`,
+                      backgroundColor: budgetColor,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.budgetHint}>
+                {budgetProgress.pace === 'over'
+                  ? t('home.budgetOverBy', {
+                      amount: formatCurrency(
+                        Math.abs(budgetProgress.remaining),
+                        settings.currencySymbol,
+                        locale
+                      ),
+                    })
+                  : t('home.budgetRemaining', {
+                      amount: formatCurrency(
+                        budgetProgress.remaining,
+                        settings.currencySymbol,
+                        locale
+                      ),
+                      days: remainingDays,
+                    })}
+              </Text>
+            </View>
+          )}
         </Card>
 
         {/* Net Worth (secondary to the monthly summary above) */}
@@ -482,6 +547,33 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  budgetContainer: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(theme.primary, 0.14),
+  },
+  budgetLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.text,
+    marginBottom: 8,
+  },
+  budgetTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: hexToRgba(theme.text, 0.08),
+    overflow: 'hidden',
+  },
+  budgetFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  budgetHint: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    marginTop: 6,
   },
   sectionTitle: {
     fontSize: 18,
