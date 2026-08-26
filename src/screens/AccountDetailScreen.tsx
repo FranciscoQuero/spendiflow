@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import {
   getAccountBalance,
@@ -344,26 +345,31 @@ export const AccountDetailScreen: React.FC = () => {
       {/* Add Balance Modal */}
       <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>{t('accounts.updateBalance')}</Text>
-            <Pressable onPress={handleAddBalance}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <AmountInput value={newBalance} onChangeText={setNewBalance} type="income" />
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowAddModal(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>{t('accounts.updateBalance')}</Text>
+              <Pressable onPress={handleAddBalance}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <AmountInput value={newBalance} onChangeText={setNewBalance} type="income" />
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -608,6 +614,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   modalContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   inputLabel: {
     fontSize: 14,

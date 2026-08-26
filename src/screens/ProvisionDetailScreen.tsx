@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { getProvisionBalance } from '../hooks/useAccounts';
 import { useTheme } from '../theme/useTheme';
@@ -267,55 +268,65 @@ export const ProvisionDetailScreen: React.FC = () => {
       {/* Contribute Modal */}
       <Modal visible={showContributeModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={closeModals}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>{t('provisions.contribute')}</Text>
-            <Pressable onPress={handleContribute}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <AmountInput value={amount} onChangeText={setAmount} type="income" />
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={closeModals}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>{t('provisions.contribute')}</Text>
+              <Pressable onPress={handleContribute}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <AmountInput value={amount} onChangeText={setAmount} type="income" />
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
 
       {/* Withdraw Modal */}
       <Modal visible={showWithdrawModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={closeModals}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>{t('provisions.withdraw')}</Text>
-            <Pressable onPress={handleWithdraw}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalHint}>
-              {t('provisions.balance')}: {formatCurrency(balance, settings.currencySymbol, locale)}
-            </Text>
-            <AmountInput value={amount} onChangeText={setAmount} type="expense" />
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={closeModals}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>{t('provisions.withdraw')}</Text>
+              <Pressable onPress={handleWithdraw}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.modalHint}>
+                {t('provisions.balance')}: {formatCurrency(balance, settings.currencySymbol, locale)}
+              </Text>
+              <AmountInput value={amount} onChangeText={setAmount} type="expense" />
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -510,6 +521,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   modalContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   modalHint: {
     textAlign: 'center',

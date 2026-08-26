@@ -7,7 +7,6 @@ import {
   TextInput,
   Pressable,
   Switch,
-  KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { AmountInput } from '../components/AmountInput';
 import { CategoryChip } from '../components/CategoryChip';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { Chip } from '../components/Chip';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -209,10 +209,7 @@ export const AddRecurringScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
+      <FormScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.closeButton}>
@@ -468,7 +465,7 @@ export const AddRecurringScreen: React.FC = () => {
             <Text style={styles.saveButtonText}>{t('common.save')}</Text>
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </FormScrollView>
     </SafeAreaView>
   );
 };

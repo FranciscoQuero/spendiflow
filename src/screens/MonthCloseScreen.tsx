@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTransactions } from '../hooks/useTransactions';
 import { getAccountBalance, getNetWorth } from '../hooks/useAccounts';
@@ -24,6 +25,7 @@ import {
   getCurrentMonth,
   getCurrentYear,
 } from '../utils/formatters';
+import { investmentTypeI18nKey } from '../utils/investmentTypes';
 import { t } from '../locales/i18n';
 import { Debt } from '../types';
 
@@ -205,7 +207,7 @@ export const MonthCloseScreen: React.FC = () => {
         <View style={styles.rowHeader}>
           <View style={styles.rowInfo}>
             <Text style={styles.rowName}>{investment.name}</Text>
-            <Text style={styles.rowSubtitle}>{investment.type}</Text>
+            <Text style={styles.rowSubtitle}>{t(investmentTypeI18nKey(investment.type))}</Text>
           </View>
           <View style={[styles.statusBadge, isModified && styles.statusBadgeModified]}>
             <Text
@@ -287,7 +289,7 @@ export const MonthCloseScreen: React.FC = () => {
       </View>
 
       {phase === 'entry' ? (
-        <>
+        <FormScrollView>
           <ScrollView
             style={styles.container}
             contentContainerStyle={styles.content}
@@ -333,7 +335,7 @@ export const MonthCloseScreen: React.FC = () => {
               <Text style={styles.saveButtonText}>{t('monthClose.saveButton')}</Text>
             </Pressable>
           </View>
-        </>
+        </FormScrollView>
       ) : (
         <>
           <ScrollView
@@ -498,7 +500,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 24,
+    paddingBottom: 32,
   },
   subtitle: {
     fontSize: 14,

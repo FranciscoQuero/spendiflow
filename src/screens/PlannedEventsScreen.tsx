@@ -7,7 +7,6 @@ import {
   Pressable,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Alert,
@@ -20,6 +19,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { Chip } from '../components/Chip';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -324,10 +324,7 @@ export const PlannedEventsScreen: React.FC = () => {
         onRequestClose={closeModal}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKeyboard}
-          >
+          <FormScrollView style={styles.modalKeyboard}>
             <View style={styles.modalHeader}>
               <Pressable onPress={closeModal}>
                 <Text style={styles.cancelText}>{t('common.cancel')}</Text>
@@ -436,7 +433,7 @@ export const PlannedEventsScreen: React.FC = () => {
                 />
               </View>
             </ScrollView>
-          </KeyboardAvoidingView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>

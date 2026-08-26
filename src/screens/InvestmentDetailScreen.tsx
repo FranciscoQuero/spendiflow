@@ -15,34 +15,19 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { getInvestmentValue } from '../hooks/useAccounts';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate, parseNumber, getDateISO } from '../utils/formatters';
+import { investmentTypeI18nKey } from '../utils/investmentTypes';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 
 type RouteProps = RouteProp<RootStackParamList, 'InvestmentDetail'>;
 
-const investmentTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'stocks':
-      return t('accounts.investmentTypes.stocks');
-    case 'crypto':
-      return t('accounts.investmentTypes.crypto');
-    case 'fund':
-      return t('accounts.investmentTypes.fund');
-    case 'etf':
-      return t('accounts.investmentTypes.etf');
-    case 'pension':
-      return t('accounts.investmentTypes.pension');
-    case 'other':
-      return t('accounts.investmentTypes.other');
-    default:
-      return type;
-  }
-};
+const investmentTypeLabel = (type: string): string => t(investmentTypeI18nKey(type));
 
 export const InvestmentDetailScreen: React.FC = () => {
   const theme = useTheme();
@@ -318,52 +303,62 @@ export const InvestmentDetailScreen: React.FC = () => {
       {/* Add Contribution Modal */}
       <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>{t('accounts.addContribution')}</Text>
-            <Pressable onPress={handleAddContribution}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <AmountInput value={newAmount} onChangeText={setNewAmount} type="income" />
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowAddModal(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>{t('accounts.addContribution')}</Text>
+              <Pressable onPress={handleAddContribution}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <AmountInput value={newAmount} onChangeText={setNewAmount} type="income" />
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
 
       {/* Update Value Modal */}
       <Modal visible={showValueModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setShowValueModal(false)}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>{t('accounts.updateCurrentValue')}</Text>
-            <Pressable onPress={handleUpdateValue}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <AmountInput value={newAmount} onChangeText={setNewAmount} type="income" />
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={valueNote}
-              onChangeText={setValueNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowValueModal(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Text style={styles.modalTitle}>{t('accounts.updateCurrentValue')}</Text>
+              <Pressable onPress={handleUpdateValue}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <AmountInput value={newAmount} onChangeText={setNewAmount} type="income" />
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={valueNote}
+                onChangeText={setValueNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -559,6 +554,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   modalContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   inputLabel: {
     fontSize: 14,

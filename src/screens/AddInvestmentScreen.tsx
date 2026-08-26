@@ -13,20 +13,13 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { parseNumber, getDateISO } from '../utils/formatters';
+import { INVESTMENT_TYPES, investmentTypeI18nKey } from '../utils/investmentTypes';
 import { t } from '../locales/i18n';
-
-const investmentTypes = [
-  { id: 'stocks', name: 'Acciones', nameEn: 'Stocks' },
-  { id: 'crypto', name: 'Cripto', nameEn: 'Crypto' },
-  { id: 'fund', name: 'Fondo de inversión', nameEn: 'Investment Fund' },
-  { id: 'etf', name: 'ETF', nameEn: 'ETF' },
-  { id: 'pension', name: 'Plan de pensiones', nameEn: 'Pension' },
-  { id: 'other', name: 'Otro', nameEn: 'Other' },
-];
 
 export const AddInvestmentScreen: React.FC = () => {
   const theme = useTheme();
@@ -35,7 +28,6 @@ export const AddInvestmentScreen: React.FC = () => {
   const navigation = useNavigation();
   const addInvestment = useStore((state) => state.addInvestment);
   const addContribution = useStore((state) => state.addContribution);
-  const settings = useStore((state) => state.settings);
 
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -84,6 +76,7 @@ export const AddInvestmentScreen: React.FC = () => {
         <View style={styles.closeButton} />
       </View>
 
+      <FormScrollView>
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -103,25 +96,25 @@ export const AddInvestmentScreen: React.FC = () => {
         {/* Type Selection */}
         <Text style={styles.label}>{t('accounts.type')}</Text>
         <View style={styles.typeContainer}>
-          {investmentTypes.map((type) => (
+          {INVESTMENT_TYPES.map((type) => (
             <Pressable
-              key={type.id}
+              key={type}
               style={[
                 styles.typeChip,
-                selectedType === type.id && styles.typeChipSelected,
+                selectedType === type && styles.typeChipSelected,
               ]}
               onPress={() => {
                 Haptics.selectionAsync();
-                setSelectedType(type.id);
+                setSelectedType(type);
               }}
             >
               <Text
                 style={[
                   styles.typeText,
-                  selectedType === type.id && styles.typeTextSelected,
+                  selectedType === type && styles.typeTextSelected,
                 ]}
               >
-                {settings.language === 'es' ? type.name : type.nameEn}
+                {t(investmentTypeI18nKey(type))}
               </Text>
             </Pressable>
           ))}
@@ -146,6 +139,7 @@ export const AddInvestmentScreen: React.FC = () => {
           <Text style={styles.saveButtonText}>{t('common.save')}</Text>
         </Pressable>
       </View>
+      </FormScrollView>
     </SafeAreaView>
   );
 };
@@ -180,6 +174,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   label: {
     fontSize: 14,

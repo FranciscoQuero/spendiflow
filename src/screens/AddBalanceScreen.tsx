@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { AmountInput } from '../components/AmountInput';
 import { Card } from '../components/Card';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -100,6 +101,7 @@ export const AddBalanceScreen: React.FC = () => {
         <View style={styles.closeButton} />
       </View>
 
+      <FormScrollView>
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -163,6 +165,7 @@ export const AddBalanceScreen: React.FC = () => {
           <Text style={styles.saveButtonText}>{t('common.save')}</Text>
         </Pressable>
       </View>
+      </FormScrollView>
     </SafeAreaView>
   );
 };
@@ -197,6 +200,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   label: {
     fontSize: 14,

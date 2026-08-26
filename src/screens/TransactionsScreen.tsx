@@ -115,6 +115,7 @@ export const TransactionsScreen: React.FC = () => {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
           contentContainerStyle={styles.filterContainer}
         >
           <FilterButton type="all" label={t('transactions.all')} />
@@ -125,6 +126,7 @@ export const TransactionsScreen: React.FC = () => {
 
         {/* Transaction List */}
         <FlatList
+          style={styles.list}
           data={filteredTransactions}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
@@ -178,13 +180,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.text,
   },
+  filterScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   filterContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 8,
   },
   filterButton: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -203,6 +211,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   filterButtonTextActive: {
     color: 'white',
+  },
+  list: {
+    flex: 1,
   },
   listContent: {
     paddingHorizontal: 20,

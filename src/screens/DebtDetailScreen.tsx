@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card } from '../components/Card';
 import { AmountInput } from '../components/AmountInput';
+import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -315,79 +316,84 @@ export const DebtDetailScreen: React.FC = () => {
       {/* Add Payment Modal */}
       <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Pressable onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>
-              {isIOwe ? t('debts.addPayment') : t('debts.registerCollection')}
-            </Text>
-            <Pressable onPress={handleAddPayment}>
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalHint}>
-              {(isIOwe ? t('debts.pendingToPay') : t('debts.pendingToCollect'))}:{' '}
-              {formatCurrency(remaining, settings.currencySymbol, locale)}
-            </Text>
-            <AmountInput
-              value={paymentAmount}
-              onChangeText={setPaymentAmount}
-              type="expense"
-            />
-
-            <Text style={styles.inputLabel}>{t('debts.paymentKind')}</Text>
-            <View style={styles.kindRow}>
-              <Pressable
-                style={[
-                  styles.kindChip,
-                  paymentKind === 'installment' && styles.kindChipSelected,
-                ]}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setPaymentKind('installment');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.kindChipText,
-                    paymentKind === 'installment' && styles.kindChipTextSelected,
-                  ]}
-                >
-                  {t('debts.installment')}
-                </Text>
+          <FormScrollView>
+            <View style={styles.modalHeader}>
+              <Pressable onPress={() => setShowAddModal(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable
-                style={[
-                  styles.kindChip,
-                  paymentKind === 'extra' && styles.kindChipSelected,
-                ]}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setPaymentKind('extra');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.kindChipText,
-                    paymentKind === 'extra' && styles.kindChipTextSelected,
-                  ]}
-                >
-                  {t('debts.extra')}
-                </Text>
+              <Text style={styles.modalTitle}>
+                {isIOwe ? t('debts.addPayment') : t('debts.registerCollection')}
+              </Text>
+              <Pressable onPress={handleAddPayment}>
+                <Text style={styles.saveText}>{t('common.save')}</Text>
               </Pressable>
             </View>
+            <ScrollView
+              contentContainerStyle={styles.modalContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.modalHint}>
+                {(isIOwe ? t('debts.pendingToPay') : t('debts.pendingToCollect'))}:{' '}
+                {formatCurrency(remaining, settings.currencySymbol, locale)}
+              </Text>
+              <AmountInput
+                value={paymentAmount}
+                onChangeText={setPaymentAmount}
+                type="expense"
+              />
 
-            <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={t('addTransaction.notePlaceholder')}
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
+              <Text style={styles.inputLabel}>{t('debts.paymentKind')}</Text>
+              <View style={styles.kindRow}>
+                <Pressable
+                  style={[
+                    styles.kindChip,
+                    paymentKind === 'installment' && styles.kindChipSelected,
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setPaymentKind('installment');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.kindChipText,
+                      paymentKind === 'installment' && styles.kindChipTextSelected,
+                    ]}
+                  >
+                    {t('debts.installment')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[
+                    styles.kindChip,
+                    paymentKind === 'extra' && styles.kindChipSelected,
+                  ]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setPaymentKind('extra');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.kindChipText,
+                      paymentKind === 'extra' && styles.kindChipTextSelected,
+                    ]}
+                  >
+                    {t('debts.extra')}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Text style={styles.inputLabel}>{t('addTransaction.note')}</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={t('addTransaction.notePlaceholder')}
+                placeholderTextColor={theme.textSecondary}
+              />
+            </ScrollView>
+          </FormScrollView>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -634,6 +640,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   modalContent: {
     padding: 20,
+    paddingBottom: 32,
   },
   modalHint: {
     textAlign: 'center',
