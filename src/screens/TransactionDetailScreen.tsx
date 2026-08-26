@@ -5,13 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
+import { setPendingTransactionUndo } from '../components/Snackbar';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
@@ -63,25 +63,21 @@ export const TransactionDetailScreen: React.FC = () => {
   const isTransfer = transaction.type === 'transfer';
 
   const handleDelete = () => {
-    Alert.alert(
-      t('common.delete'),
-      t('transactions.deleteConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: () => {
-            deleteTransaction(id);
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    // Sin Alert de confirmación: se borra directamente y se deja la
+    // transacción en el buzón de deshacer para que TransactionsScreen
+    // muestre su snackbar de "Deshacer" al recuperar el foco (ver
+    // comentario junto a `setPendingTransactionUndo`).
+    setPendingTransactionUndo(transaction);
+    deleteTransaction(id);
+    navigation.goBack();
   };
 
   const handleEdit = () => {
     navigation.navigate('AddTransaction', { transactionId: id });
+  };
+
+  const handleDuplicate = () => {
+    navigation.navigate('AddTransaction', { duplicateFromId: id });
   };
 
   const getCategoryName = () => {
@@ -124,6 +120,13 @@ export const TransactionDetailScreen: React.FC = () => {
         </Pressable>
         <Text style={styles.headerTitle}>{headerTitle}</Text>
         <View style={styles.headerActions}>
+          <Pressable
+            onPress={handleDuplicate}
+            style={styles.backButton}
+            accessibilityLabel={t('transactions.duplicate')}
+          >
+            <Ionicons name="copy-outline" size={22} color={theme.text} />
+          </Pressable>
           <Pressable onPress={handleEdit} style={styles.backButton}>
             <Ionicons name="pencil-outline" size={22} color={theme.text} />
           </Pressable>

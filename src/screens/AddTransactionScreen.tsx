@@ -58,25 +58,40 @@ export const AddTransactionScreen: React.FC = () => {
   );
   const isEditing = !!existing;
 
-  // El tipo lo determina la transacción existente (edición) o el parámetro de
+  // Duplicar: precarga los mismos campos que una transacción existente pero
+  // SIN entrar en modo edición (isEditing sigue dependiendo solo de `existing`)
+  // y con la fecha de hoy en vez de la original.
+  const duplicateFromId = route.params.duplicateFromId;
+  const duplicateSource = useMemo(
+    () =>
+      duplicateFromId ? transactions.find((tr) => tr.id === duplicateFromId) : undefined,
+    [duplicateFromId, transactions]
+  );
+  const prefillSource = existing ?? duplicateSource;
+
+  // El tipo lo determina la transacción existente/duplicada o el parámetro de
   // navegación (creación); por defecto se abre como gasto.
-  const type = existing?.type ?? route.params.type ?? 'expense';
+  const type = prefillSource?.type ?? route.params.type ?? 'expense';
   const isExpense = type === 'expense';
   const isTransfer = type === 'transfer';
 
-  const [amount, setAmount] = useState(existing ? String(existing.amount) : '');
-  const [concept, setConcept] = useState(existing?.concept ?? '');
+  const [amount, setAmount] = useState(prefillSource ? String(prefillSource.amount) : '');
+  const [concept, setConcept] = useState(prefillSource?.concept ?? '');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    existing?.categoryId ?? null
+    prefillSource?.categoryId ?? null
   );
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(
-    existing?.subcategoryId ?? null
+    prefillSource?.subcategoryId ?? null
   );
-  const [accountId, setAccountId] = useState<string | null>(existing?.accountId ?? null);
-  const [toAccountId, setToAccountId] = useState<string | null>(existing?.toAccountId ?? null);
-  const [scope, setScope] = useState<TransactionScope>(existing?.scope ?? 'personal');
+  const [accountId, setAccountId] = useState<string | null>(prefillSource?.accountId ?? null);
+  const [toAccountId, setToAccountId] = useState<string | null>(
+    prefillSource?.toAccountId ?? null
+  );
+  const [scope, setScope] = useState<TransactionScope>(prefillSource?.scope ?? 'personal');
+  // La fecha solo se precarga desde `existing` (edición); al duplicar siempre
+  // arranca en el día de hoy.
   const [date, setDate] = useState<Date>(existing ? new Date(existing.date) : new Date());
-  const [note, setNote] = useState(existing?.note ?? '');
+  const [note, setNote] = useState(prefillSource?.note ?? '');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
