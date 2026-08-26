@@ -30,6 +30,7 @@ export default {
     noTransactions: 'No transactions',
     pendingRecurrences: 'Pending confirmations',
     moreCount: '+%{count} more',
+    upcomingEvents: 'Upcoming due dates',
   },
 
   // Transactions
@@ -147,6 +148,9 @@ export default {
     trend: 'Trend',
     total: 'Total',
     noData: 'No data for this period',
+    scopeAll: 'All',
+    scopePersonal: 'Personal',
+    scopeBusiness: 'Business',
   },
 
   // Accounts
@@ -400,6 +404,32 @@ export default {
   // Planned events
   plannedEvents: {
     title: 'Financial calendar',
+    overdueSection: 'Overdue',
+    upcomingSection: 'Upcoming',
+    completedSection: 'Completed',
+    emptyTitle: 'No planned due dates',
+    emptyDescription:
+      'Add your quarterly tax filings, annual return, or any dated payment so Spendiflow can give you a heads-up.',
+    createButton: 'Add due date',
+    addTitle: 'New due date',
+    editTitle: 'Edit due date',
+    name: 'Name',
+    namePlaceholder: 'E.g.: Form 130 (Q3)',
+    date: 'Date',
+    estimatedAmount: 'Estimated amount (optional)',
+    account: 'Account',
+    noAccount: 'No account',
+    note: 'Note (optional)',
+    notePlaceholder: 'Add a note...',
+    markDone: 'Mark as done',
+    markNotDone: 'Mark as pending',
+    deleteConfirm: 'Delete "%{name}"?',
+    errors: {
+      name: 'Add a name',
+      date: 'Select a date',
+    },
+    seeAll: 'See all',
+    moreCount: '+%{count} more',
   },
 
   // Months

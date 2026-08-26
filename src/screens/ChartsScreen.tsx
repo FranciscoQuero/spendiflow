@@ -10,23 +10,35 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, BarChart } from 'react-native-chart-kit';
 import { Card } from '../components/Card';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { useTransactions } from '../hooks/useTransactions';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
 import { formatCurrency, formatPercentage } from '../utils/formatters';
-import { ChartPeriod } from '../types';
+import { ChartPeriod, TransactionScope } from '../types';
 import { t } from '../locales/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 40;
 
+type ScopeFilter = TransactionScope | 'all';
+
 export const ChartsScreen: React.FC = () => {
   const [period, setPeriod] = useState<ChartPeriod>('month');
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
   const settings = useStore((state) => state.settings);
   const { getPeriodSummary, getDailyTotals } = useTransactions();
 
-  const summary = useMemo(() => getPeriodSummary(period), [period, getPeriodSummary]);
-  const dailyTotals = useMemo(() => getDailyTotals(period, 'expense'), [period, getDailyTotals]);
+  const scope = scopeFilter === 'all' ? undefined : scopeFilter;
+
+  const summary = useMemo(
+    () => getPeriodSummary(period, undefined, scope),
+    [period, scope, getPeriodSummary]
+  );
+  const dailyTotals = useMemo(
+    () => getDailyTotals(period, 'expense', scope),
+    [period, scope, getDailyTotals]
+  );
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
 
   const pieData = useMemo(() => {
@@ -99,6 +111,19 @@ export const ChartsScreen: React.FC = () => {
           <PeriodTab value="month" label={t('charts.month')} />
           <PeriodTab value="quarter" label={t('charts.quarter')} />
           <PeriodTab value="year" label={t('charts.year')} />
+        </View>
+
+        {/* Scope Filter */}
+        <View style={styles.scopeSelector}>
+          <SegmentedControl
+            value={scopeFilter}
+            onChange={setScopeFilter}
+            options={[
+              { value: 'all', label: t('charts.scopeAll') },
+              { value: 'personal', label: t('charts.scopePersonal') },
+              { value: 'business', label: t('charts.scopeBusiness') },
+            ]}
+          />
         </View>
 
         {/* Total Summary */}
@@ -234,6 +259,9 @@ const styles = StyleSheet.create({
   },
   periodTabTextActive: {
     color: 'white',
+  },
+  scopeSelector: {
+    marginBottom: 20,
   },
   summaryCard: {
     alignItems: 'center',

@@ -30,6 +30,7 @@ export default {
     noTransactions: 'No hay transacciones',
     pendingRecurrences: 'Pendientes de confirmar',
     moreCount: '+%{count} más',
+    upcomingEvents: 'Próximos vencimientos',
   },
 
   // Transactions
@@ -147,6 +148,9 @@ export default {
     trend: 'Tendencia',
     total: 'Total',
     noData: 'Sin datos para este período',
+    scopeAll: 'Todos',
+    scopePersonal: 'Personal',
+    scopeBusiness: 'Negocio',
   },
 
   // Accounts
@@ -400,6 +404,32 @@ export default {
   // Planned events
   plannedEvents: {
     title: 'Calendario financiero',
+    overdueSection: 'Vencidos',
+    upcomingSection: 'Próximos',
+    completedSection: 'Completados',
+    emptyTitle: 'Sin vencimientos planificados',
+    emptyDescription:
+      'Añade tus modelos trimestrales, la renta o cualquier pago con fecha para que Spendiflow te avise con tiempo.',
+    createButton: 'Añadir vencimiento',
+    addTitle: 'Nuevo vencimiento',
+    editTitle: 'Editar vencimiento',
+    name: 'Nombre',
+    namePlaceholder: 'Ej: Modelo 130 (3T)',
+    date: 'Fecha',
+    estimatedAmount: 'Importe estimado (opcional)',
+    account: 'Cuenta',
+    noAccount: 'Sin cuenta',
+    note: 'Nota (opcional)',
+    notePlaceholder: 'Añade una nota...',
+    markDone: 'Marcar como hecho',
+    markNotDone: 'Marcar como pendiente',
+    deleteConfirm: '¿Eliminar "%{name}"?',
+    errors: {
+      name: 'Añade un nombre',
+      date: 'Selecciona una fecha',
+    },
+    seeAll: 'Ver todos',
+    moreCount: '+%{count} más',
   },
 
   // Months

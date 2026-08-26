@@ -56,6 +56,29 @@ export const computePeriodSummary = (
   };
 };
 
+/**
+ * Agrupa una lista de transacciones ya filtrada por día (YYYY-MM-DD) y tipo,
+ * sumando los importes. Las transferencias quedan excluidas de forma natural
+ * por el filtro de `type` ('expense' | 'income'). Función pura, exportada
+ * para poder testearla sin pasar por el store.
+ */
+export const computeDailyTotals = (
+  transactions: Transaction[],
+  type: 'expense' | 'income' = 'expense'
+): { date: string; total: number }[] => {
+  const filtered = transactions.filter((t) => t.type === type);
+
+  const dailyTotals = filtered.reduce((acc, t) => {
+    const dateKey = t.date.split('T')[0];
+    acc[dateKey] = (acc[dateKey] || 0) + t.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(dailyTotals)
+    .map(([date, total]) => ({ date, total }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
+
 export const useTransactions = () => {
   const transactions = useStore((state) => state.transactions);
   const categories = useStore((state) => state.categories);
@@ -115,23 +138,11 @@ export const useTransactions = () => {
 
   const getDailyTotals = (
     period: ChartPeriod,
-    type: 'expense' | 'income' = 'expense'
+    type: 'expense' | 'income' = 'expense',
+    scope?: TransactionScope
   ): { date: string; total: number }[] => {
-    // `type` solo puede ser 'expense' | 'income', las transferencias quedan
-    // excluidas de forma natural por este filtro.
-    const periodTransactions = getTransactionsByPeriod(period).filter(
-      (t) => t.type === type
-    );
-
-    const dailyTotals = periodTransactions.reduce((acc, t) => {
-      const dateKey = t.date.split('T')[0];
-      acc[dateKey] = (acc[dateKey] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(dailyTotals)
-      .map(([date, total]) => ({ date, total }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    const periodTransactions = getTransactionsByPeriod(period, undefined, scope);
+    return computeDailyTotals(periodTransactions, type);
   };
 
   return {

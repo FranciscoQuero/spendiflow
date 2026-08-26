@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts } from '../hooks/useAccounts';
 import { useStore } from '../store/useStore';
 import { colors } from '../theme/colors';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDate } from '../utils/formatters';
+import { getUpcomingPlannedEvents } from '../utils/plannedEvents';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 import { RecurringRule, TransactionType } from '../types';
@@ -46,6 +47,7 @@ export const HomeScreen: React.FC = () => {
   const settings = useStore((state) => state.settings);
   const confirmRecurrence = useStore((state) => state.confirmRecurrence);
   const skipRecurrence = useStore((state) => state.skipRecurrence);
+  const plannedEvents = useStore((state) => state.plannedEvents);
   const { getPeriodSummary, getRecentTransactions } = useTransactions();
   const { getDueRecurrences } = useAccounts();
 
@@ -55,6 +57,13 @@ export const HomeScreen: React.FC = () => {
   const visibleDueRecurrences = dueRecurrences.slice(0, MAX_VISIBLE_DUE);
   const extraDueCount = dueRecurrences.length - visibleDueRecurrences.length;
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
+
+  const upcomingPlannedEvents = useMemo(
+    () => getUpcomingPlannedEvents(plannedEvents),
+    [plannedEvents]
+  );
+  const visiblePlannedEvents = upcomingPlannedEvents.slice(0, MAX_VISIBLE_DUE);
+  const extraPlannedEventsCount = upcomingPlannedEvents.length - visiblePlannedEvents.length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -151,6 +160,63 @@ export const HomeScreen: React.FC = () => {
               >
                 <Text style={styles.moreText}>
                   {t('home.moreCount', { count: extraDueCount })}
+                </Text>
+              </Pressable>
+            )}
+          </Card>
+        )}
+
+        {/* Upcoming Planned Events */}
+        {upcomingPlannedEvents.length > 0 && (
+          <Card style={styles.upcomingCard}>
+            <View style={styles.pendingHeader}>
+              <Text style={styles.summaryTitle}>{t('home.upcomingEvents')}</Text>
+              <Text
+                style={styles.seeAll}
+                onPress={() => navigation.navigate('PlannedEvents')}
+              >
+                {t('home.seeAll')}
+              </Text>
+            </View>
+
+            {visiblePlannedEvents.map((event, index) => {
+              const isOverdue = new Date(event.date).getTime() < Date.now();
+              return (
+                <React.Fragment key={event.id}>
+                  <View style={styles.pendingRow}>
+                    <View style={styles.pendingInfo}>
+                      <Text style={styles.pendingName} numberOfLines={1}>
+                        {event.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.eventDate,
+                          isOverdue && styles.eventDateOverdue,
+                        ]}
+                      >
+                        {formatDate(event.date, locale)}
+                      </Text>
+                    </View>
+                    {event.estimatedAmount != null && (
+                      <Text style={styles.eventAmount}>
+                        {formatCurrency(event.estimatedAmount, settings.currencySymbol, locale)}
+                      </Text>
+                    )}
+                  </View>
+                  {index < visiblePlannedEvents.length - 1 && (
+                    <View style={styles.pendingDivider} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+
+            {extraPlannedEventsCount > 0 && (
+              <Pressable
+                style={styles.moreRow}
+                onPress={() => navigation.navigate('PlannedEvents')}
+              >
+                <Text style={styles.moreText}>
+                  {t('home.moreCount', { count: extraPlannedEventsCount })}
                 </Text>
               </Pressable>
             )}
@@ -256,6 +322,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderWidth: 1,
     borderColor: colors.warning,
+  },
+  upcomingCard: {
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  eventDate: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  eventDateOverdue: {
+    color: colors.warning,
+    fontWeight: '600',
+  },
+  eventAmount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
   },
   pendingHeader: {
     flexDirection: 'row',
