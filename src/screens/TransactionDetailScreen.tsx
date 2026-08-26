@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
 import { useStore } from '../store/useStore';
@@ -18,14 +19,16 @@ import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 
 type RouteProps = RouteProp<RootStackParamList, 'TransactionDetail'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const TransactionDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { id } = route.params;
 
   const transactions = useStore((state) => state.transactions);
   const categories = useStore((state) => state.categories);
+  const bankAccounts = useStore((state) => state.bankAccounts);
   const deleteTransaction = useStore((state) => state.deleteTransaction);
   const settings = useStore((state) => state.settings);
 
@@ -53,6 +56,7 @@ export const TransactionDetailScreen: React.FC = () => {
   }
 
   const isExpense = transaction.type === 'expense';
+  const isTransfer = transaction.type === 'transfer';
 
   const handleDelete = () => {
     Alert.alert(
@@ -72,8 +76,13 @@ export const TransactionDetailScreen: React.FC = () => {
     );
   };
 
+  const handleEdit = () => {
+    navigation.navigate('AddTransaction', { transactionId: id });
+  };
+
   const getCategoryName = () => {
-    if (!category) return transaction.categoryId || '';
+    if (!transaction.categoryId) return t('transactions.noCategory');
+    if (!category) return t('transactions.noCategory');
     return settings.language === 'es' ? category.name : category.nameEn;
   };
 
@@ -82,6 +91,26 @@ export const TransactionDetailScreen: React.FC = () => {
     return settings.language === 'es' ? subcategory.name : subcategory.nameEn;
   };
 
+  const getAccountName = (accountId?: string) => {
+    if (!accountId) return null;
+    const account = bankAccounts.find((a) => a.id === accountId);
+    return account ? account.name : t('transactions.unknownAccount');
+  };
+
+  const accountName = getAccountName(transaction.accountId);
+  const fromAccountName = getAccountName(transaction.accountId) ?? t('transactions.unknownAccount');
+  const toAccountName = getAccountName(transaction.toAccountId) ?? t('transactions.unknownAccount');
+  const scopeLabel =
+    transaction.scope === 'business'
+      ? t('addTransaction.scopeBusiness')
+      : t('addTransaction.scopePersonal');
+
+  const headerTitle = isTransfer
+    ? t('transactions.transfer')
+    : isExpense
+    ? t('transactions.expense')
+    : t('transactions.income');
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -89,12 +118,15 @@ export const TransactionDetailScreen: React.FC = () => {
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>
-          {isExpense ? t('transactions.expense') : t('transactions.income')}
-        </Text>
-        <Pressable onPress={handleDelete} style={styles.backButton}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
-        </Pressable>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
+        <View style={styles.headerActions}>
+          <Pressable onPress={handleEdit} style={styles.backButton}>
+            <Ionicons name="pencil-outline" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable onPress={handleDelete} style={styles.backButton}>
+            <Ionicons name="trash-outline" size={22} color={colors.expense} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -106,10 +138,10 @@ export const TransactionDetailScreen: React.FC = () => {
           <Text
             style={[
               styles.amount,
-              isExpense ? styles.expenseText : styles.incomeText,
+              isTransfer ? styles.neutralText : isExpense ? styles.expenseText : styles.incomeText,
             ]}
           >
-            {isExpense ? '-' : '+'}
+            {isTransfer ? '' : isExpense ? '-' : '+'}
             {formatCurrency(transaction.amount, settings.currencySymbol, locale)}
           </Text>
         </View>
@@ -121,23 +153,50 @@ export const TransactionDetailScreen: React.FC = () => {
             label={t('addTransaction.concept')}
             value={transaction.concept}
           />
-          <View style={styles.divider} />
-          <DetailRow
-            icon="folder"
-            label={t('addTransaction.category')}
-            value={getCategoryName()}
-            color={category?.color}
-          />
-          {subcategory && (
+
+          {isTransfer ? (
             <>
               <View style={styles.divider} />
               <DetailRow
-                icon="pricetag"
-                label={t('addTransaction.subcategory')}
-                value={getSubcategoryName() || ''}
+                icon="swap-horizontal"
+                label={t('transfers.title')}
+                value={t('transactions.fromTo', { from: fromAccountName, to: toAccountName })}
+              />
+            </>
+          ) : (
+            <>
+              <View style={styles.divider} />
+              <DetailRow
+                icon="folder"
+                label={t('addTransaction.category')}
+                value={getCategoryName()}
+                color={category?.color}
+              />
+              {subcategory && (
+                <>
+                  <View style={styles.divider} />
+                  <DetailRow
+                    icon="pricetag"
+                    label={t('addTransaction.subcategory')}
+                    value={getSubcategoryName() || ''}
+                  />
+                </>
+              )}
+              <View style={styles.divider} />
+              <DetailRow
+                icon="wallet"
+                label={t('addTransaction.account')}
+                value={accountName || t('addTransaction.noAccount')}
+              />
+              <View style={styles.divider} />
+              <DetailRow
+                icon="briefcase-outline"
+                label={t('addTransaction.scope')}
+                value={scopeLabel}
               />
             </>
           )}
+
           <View style={styles.divider} />
           <DetailRow
             icon="calendar"
@@ -200,6 +259,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerActions: {
+    flexDirection: 'row',
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -233,6 +295,9 @@ const styles = StyleSheet.create({
   },
   incomeText: {
     color: colors.income,
+  },
+  neutralText: {
+    color: colors.textSecondary,
   },
   detailsCard: {
     padding: 0,
