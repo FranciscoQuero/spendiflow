@@ -7,6 +7,8 @@ import { Theme } from '../theme/colors';
 import { formatCurrency, formatRelativeDate } from '../utils/formatters';
 import { useStore } from '../store/useStore';
 import { t } from '../locales/i18n';
+import { TintedIcon } from './TintedIcon';
+import { Badge } from './Badge';
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -65,9 +67,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
         onPress={onPress}
         onLongPress={onLongPress}
       >
-        <View style={[styles.iconContainer, { backgroundColor: theme.textSecondary }]}>
-          <Ionicons name="swap-horizontal" size={20} color="white" />
-        </View>
+        <TintedIcon name="swap-horizontal" color={theme.textSecondary} />
 
         <View style={styles.content}>
           <Text style={styles.concept} numberOfLines={1}>
@@ -94,29 +94,17 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({
       onPress={onPress}
       onLongPress={onLongPress}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: category?.color || theme.textSecondary },
-        ]}
-      >
-        <Ionicons
-          name={(transaction.categoryId && categoryIcons[transaction.categoryId]) || 'receipt'}
-          size={20}
-          color="white"
-        />
-      </View>
+      <TintedIcon
+        name={(transaction.categoryId && categoryIcons[transaction.categoryId]) || 'receipt'}
+        color={category?.color || theme.textSecondary}
+      />
 
       <View style={styles.content}>
         <View style={styles.conceptRow}>
           <Text style={styles.concept} numberOfLines={1}>
             {transaction.concept}
           </Text>
-          {isBusiness && (
-            <View style={styles.businessBadge}>
-              <Text style={styles.businessBadgeText}>{t('transactions.business')}</Text>
-            </View>
-          )}
+          {isBusiness && <Badge label={t('transactions.business')} color={theme.primary} />}
         </View>
         <Text style={styles.category} numberOfLines={1}>
           {getCategoryName(category)} • {formatRelativeDate(
@@ -151,13 +139,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   content: {
     flex: 1,
     marginLeft: 12,
@@ -173,18 +154,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.text,
     flexShrink: 1,
   },
-  businessBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: theme.primaryLight,
-  },
-  businessBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: 'white',
-    textTransform: 'uppercase',
-  },
   category: {
     fontSize: 13,
     color: theme.textSecondary,
@@ -192,7 +161,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   amount: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   expense: {
     color: theme.expense,

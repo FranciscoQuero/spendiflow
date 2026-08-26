@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -10,6 +11,7 @@ import {
 } from '../screens';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
+import { hexToRgba } from '../theme/colors';
 import { t } from '../locales/i18n';
 import { TabParamList } from './types';
 
@@ -47,7 +49,19 @@ export const TabNavigator: React.FC = () => {
               iconName = 'ellipse';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          const icon = <Ionicons name={iconName} size={size} color={color} />;
+          if (!focused) return icon;
+
+          return (
+            <View
+              style={[
+                styles.activeIconTint,
+                { backgroundColor: hexToRgba(theme.primary, 0.14) },
+              ]}
+            >
+              {icon}
+            </View>
+          );
         },
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
@@ -98,3 +112,11 @@ export const TabNavigator: React.FC = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  activeIconTint: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 14,
+  },
+});

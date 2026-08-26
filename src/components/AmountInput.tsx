@@ -89,9 +89,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   input: {
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: '800',
     minWidth: 100,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
   expenseText: {
     color: theme.expense,

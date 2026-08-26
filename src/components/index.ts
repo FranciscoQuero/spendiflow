@@ -7,3 +7,5 @@ export { SegmentedControl } from './SegmentedControl';
 export { Chip } from './Chip';
 export { RecurrenceActions } from './RecurrenceActions';
 export { FormScrollView } from './FormScrollView';
+export { TintedIcon } from './TintedIcon';
+export { Badge } from './Badge';
