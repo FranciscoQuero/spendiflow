@@ -44,6 +44,8 @@ const roleLabel = (role: string): string => {
       return t('accounts.roleOptions.shared');
     case 'savings':
       return t('accounts.roleOptions.savings');
+    case 'cash':
+      return t('accounts.roleOptions.cash');
     default:
       return t('accounts.roleOptions.other');
   }

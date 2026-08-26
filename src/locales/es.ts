@@ -185,7 +185,9 @@ export default {
     accountName: 'Nombre de la cuenta',
     accountNamePlaceholder: 'Ej: Cuenta principal',
     bankName: 'Banco',
+    bankNameOptional: 'Banco (opcional)',
     bankNamePlaceholder: 'Ej: BBVA, Santander',
+    bankNamePlaceholderCash: 'Cartera',
     initialBalance: 'Saldo inicial (opcional)',
     initialBalanceNote: 'Saldo inicial',
     role: 'Rol',
@@ -194,6 +196,7 @@ export default {
       business: 'Negocio',
       shared: 'Compartida',
       savings: 'Ahorro',
+      cash: 'Efectivo',
       other: 'Otra',
     },
     floor: 'Suelo',
@@ -485,6 +488,9 @@ export default {
     doneButton: 'Hecho',
     debtIOwe: 'Debo',
     debtOwedToMe: 'Me deben',
+    reconciliationText: 'Descuadre de %{amount} respecto a lo registrado',
+    createAdjustment: 'Crear ajuste',
+    reconciliationAdjustmentConcept: 'Ajuste de conciliación',
   },
 
   // Planned events
