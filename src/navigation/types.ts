@@ -11,7 +11,12 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<TabParamList>;
-  AddTransaction: { type?: TransactionType; transactionId?: string };
+  AddTransaction: {
+    type?: TransactionType;
+    transactionId?: string;
+    /** Precarga los campos de esta transacción (fecha = hoy) sin entrar en modo edición. */
+    duplicateFromId?: string;
+  };
   AddBalance: undefined;
   AddAccount: { accountId?: string } | undefined;
   AddInvestment: undefined;

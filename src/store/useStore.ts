@@ -162,6 +162,8 @@ interface StoreState {
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt'>) => string;
   updateTransaction: (id: string, updates: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
+  /** Reinserta una transacción ya existente tal cual (mismo id), usado para deshacer un borrado. */
+  restoreTransaction: (transaction: Transaction) => void;
 
   // Category Actions
   addCategory: (category: Omit<Category, 'id' | 'subcategories'>) => string;
@@ -382,6 +384,15 @@ export const useStore = create<StoreState>()(
         set((state) => ({
           transactions: state.transactions.filter((t) => t.id !== id),
         })),
+
+      restoreTransaction: (transaction) =>
+        set((state) => {
+          // Evita duplicarla si ya está presente (p.ej. doble tap en deshacer).
+          if (state.transactions.some((t) => t.id === transaction.id)) {
+            return state;
+          }
+          return { transactions: [...state.transactions, transaction] };
+        }),
 
       // Category Actions
       addCategory: (category) => {
