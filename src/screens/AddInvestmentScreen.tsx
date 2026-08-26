@@ -28,10 +28,14 @@ export const AddInvestmentScreen: React.FC = () => {
   const navigation = useNavigation();
   const addInvestment = useStore((state) => state.addInvestment);
   const addContribution = useStore((state) => state.addContribution);
+  const addInvestmentValueEntry = useStore((state) => state.addInvestmentValueEntry);
 
   const [name, setName] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [initialContribution, setInitialContribution] = useState('');
+  // Ambos campos son independientes: quien da de alta una inversión que ya
+  // existía puede rellenar solo uno, ambos o ninguno.
+  const [totalContributed, setTotalContributed] = useState('');
+  const [currentValue, setCurrentValue] = useState('');
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -51,12 +55,22 @@ export const AddInvestmentScreen: React.FC = () => {
       type: selectedType,
     });
 
-    // Add initial contribution if provided
-    if (parseNumber(initialContribution) > 0) {
+    // Total aportado hasta hoy: se registra como una única aportación
+    // histórica, no como si empezaras de cero.
+    if (parseNumber(totalContributed) > 0) {
       addContribution(newInvestmentId, {
-        amount: parseNumber(initialContribution),
+        amount: parseNumber(totalContributed),
         date: getDateISO(),
-        note: t('accounts.initialContributionNote'),
+        note: t('accounts.previousContributionsNote'),
+      });
+    }
+
+    // Valor actual: independiente de lo aportado, para no forzar un
+    // beneficio de 0% cuando la inversión ya tenía recorrido.
+    if (parseNumber(currentValue) > 0) {
+      addInvestmentValueEntry(newInvestmentId, {
+        value: parseNumber(currentValue),
+        date: getDateISO(),
       });
     }
 
@@ -120,12 +134,22 @@ export const AddInvestmentScreen: React.FC = () => {
           ))}
         </View>
 
-        {/* Initial Contribution */}
-        <Text style={styles.label}>{t('accounts.initialContribution')}</Text>
+        {/* Total Contributed To Date */}
+        <Text style={styles.label}>{t('accounts.totalContributedToDate')}</Text>
+        <Text style={styles.hint}>{t('accounts.totalContributedToDateHelp')}</Text>
         <AmountInput
-          value={initialContribution}
-          onChangeText={setInitialContribution}
+          value={totalContributed}
+          onChangeText={setTotalContributed}
           type="income"
+        />
+
+        {/* Current Value */}
+        <Text style={styles.label}>{t('accounts.currentValue')}</Text>
+        <Text style={styles.hint}>{t('accounts.currentValueHelp')}</Text>
+        <AmountInput
+          value={currentValue}
+          onChangeText={setCurrentValue}
+          type="transfer"
         />
       </ScrollView>
 
@@ -193,6 +217,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.text,
     borderWidth: 1,
     borderColor: theme.border,
+  },
+  hint: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    marginBottom: 8,
+    marginTop: -4,
   },
   typeContainer: {
     flexDirection: 'row',

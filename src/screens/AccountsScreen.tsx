@@ -20,6 +20,12 @@ import {
   getMyShareBalance,
   getProvisionBalance,
 } from '../hooks/useAccounts';
+import {
+  computeInvestmentReturn,
+  getInvestmentDisplayValue,
+  getTotalContributed,
+  hasInvestmentValue,
+} from '../utils/investments';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -72,10 +78,10 @@ export const AccountsScreen: React.FC = () => {
     return activeAccounts.reduce((sum, account) => sum + getMyShareBalance(account), 0);
   }, [activeAccounts]);
 
+  // Valor actual agregado de la cartera; si una inversión concreta no tiene
+  // valor registrado, cae en lo aportado (ver getInvestmentDisplayValue).
   const totalInvested = useMemo(() => {
-    return investments.reduce((sum, inv) => {
-      return sum + inv.contributions.reduce((s, c) => s + c.amount, 0);
-    }, 0);
+    return investments.reduce((sum, inv) => sum + getInvestmentDisplayValue(inv), 0);
   }, [investments]);
 
   const iOweDebts = useMemo(() => debts.filter((d) => d.direction === 'iOwe'), [debts]);
@@ -183,7 +189,21 @@ export const AccountsScreen: React.FC = () => {
   };
 
   const renderInvestment = (investment: typeof investments[0]) => {
-    const totalContributed = investment.contributions.reduce((s, c) => s + c.amount, 0);
+    // Jerarquía: el dato principal es el valor actual; si todavía no se ha
+    // registrado ninguno, cae en lo aportado (con su propia etiqueta, para
+    // no hacer pasar una aportación por una valoración de mercado).
+    const totalContributed = getTotalContributed(investment);
+    const hasValue = hasInvestmentValue(investment);
+    const displayValue = getInvestmentDisplayValue(investment);
+    const { gain, percent } = computeInvestmentReturn(
+      totalContributed,
+      hasValue ? displayValue : undefined
+    );
+    // Solo tiene sentido mostrar un beneficio cuando hay tanto un valor de
+    // mercado como aportaciones con las que compararlo.
+    const showGain = hasValue && totalContributed > 0 && gain !== null;
+    const gainColor = (gain ?? 0) >= 0 ? theme.income : theme.expense;
+
     return (
       <Card
         key={investment.id}
@@ -199,13 +219,23 @@ export const AccountsScreen: React.FC = () => {
           </View>
         </View>
         <View style={styles.itemFooter}>
-          <Text style={styles.balanceLabel}>{t('accounts.totalContributed')}</Text>
-          <Text style={[styles.balanceValue, { color: theme.income }]}>
-            {formatCurrency(totalContributed, settings.currencySymbol, locale)}
+          <Text style={styles.balanceLabel}>
+            {hasValue ? t('accounts.currentValue') : t('accounts.totalContributed')}
           </Text>
-          {investment.currentValue && (
+          <Text style={[styles.balanceValue, { color: hasValue ? theme.primary : theme.income }]}>
+            {formatCurrency(displayValue, settings.currencySymbol, locale)}
+          </Text>
+          {showGain && gain !== null && (
             <Text style={styles.lastUpdate}>
-              {t('accounts.currentValue')}: {formatCurrency(investment.currentValue, settings.currencySymbol, locale)}
+              {t('accounts.totalContributed')} {formatCurrency(totalContributed, settings.currencySymbol, locale)}
+              {'  ·  '}
+              {t('accounts.gain')}{' '}
+              <Text style={[styles.gainInline, { color: gainColor }]}>
+                {gain >= 0 ? '+' : ''}
+                {formatCurrency(gain, settings.currencySymbol, locale)}
+                {percent !== null &&
+                  ` (${percent >= 0 ? '+' : ''}${percent.toFixed(1)}%)`}
+              </Text>
             </Text>
           )}
         </View>
@@ -535,6 +565,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.textSecondary,
     marginTop: 4,
+  },
+  gainInline: {
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   provisionChipRow: {
     flexDirection: 'row',
