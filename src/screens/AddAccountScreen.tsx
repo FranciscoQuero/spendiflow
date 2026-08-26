@@ -132,7 +132,7 @@ export const AddAccountScreen: React.FC = () => {
         addBalanceEntry(newAccountId, {
           amount: balance,
           date: getDateISO(),
-          note: 'Initial balance',
+          note: t('accounts.initialBalanceNote'),
         });
       }
 

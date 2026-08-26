@@ -60,7 +60,7 @@ export const InvestmentDetailScreen: React.FC = () => {
           </Pressable>
         </View>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Investment not found</Text>
+          <Text style={styles.notFoundText}>{t('accounts.investmentNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -69,7 +69,7 @@ export const InvestmentDetailScreen: React.FC = () => {
   const handleDelete = () => {
     Alert.alert(
       t('common.delete'),
-      `Delete "${investment.name}"?`,
+      t('accounts.deleteInvestmentConfirm', { name: investment.name }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -87,7 +87,7 @@ export const InvestmentDetailScreen: React.FC = () => {
   const handleAddContribution = () => {
     const parsedAmount = parseNumber(newAmount);
     if (parsedAmount <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
       return;
     }
 
@@ -106,7 +106,7 @@ export const InvestmentDetailScreen: React.FC = () => {
   const handleUpdateValue = () => {
     const parsedAmount = parseNumber(newAmount);
     if (parsedAmount <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
       return;
     }
 
@@ -162,7 +162,7 @@ export const InvestmentDetailScreen: React.FC = () => {
 
           {investment.currentValue && (
             <View style={styles.returnContainer}>
-              <Text style={styles.returnLabel}>Return</Text>
+              <Text style={styles.returnLabel}>{t('accounts.return')}</Text>
               <Text
                 style={[
                   styles.returnValue,
@@ -181,20 +181,20 @@ export const InvestmentDetailScreen: React.FC = () => {
               onPress={() => setShowAddModal(true)}
             >
               <Ionicons name="add" size={20} color="white" />
-              <Text style={styles.buttonText}>Add Contribution</Text>
+              <Text style={styles.buttonText}>{t('accounts.addContribution')}</Text>
             </Pressable>
             <Pressable
               style={[styles.actionButton, { backgroundColor: theme.primary }]}
               onPress={() => setShowValueModal(true)}
             >
               <Ionicons name="refresh" size={20} color="white" />
-              <Text style={styles.buttonText}>Update Value</Text>
+              <Text style={styles.buttonText}>{t('accounts.updateValue')}</Text>
             </Pressable>
           </View>
         </Card>
 
         {/* Contribution History */}
-        <Text style={styles.sectionTitle}>Contributions</Text>
+        <Text style={styles.sectionTitle}>{t('accounts.contributions')}</Text>
         <Card>
           {investment.contributions.length > 0 ? (
             [...investment.contributions].reverse().map((contribution, index) => (
@@ -218,7 +218,7 @@ export const InvestmentDetailScreen: React.FC = () => {
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No contributions yet</Text>
+            <Text style={styles.emptyText}>{t('accounts.noContributions')}</Text>
           )}
         </Card>
       </ScrollView>
@@ -230,7 +230,7 @@ export const InvestmentDetailScreen: React.FC = () => {
             <Pressable onPress={() => setShowAddModal(false)}>
               <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Text style={styles.modalTitle}>Add Contribution</Text>
+            <Text style={styles.modalTitle}>{t('accounts.addContribution')}</Text>
             <Pressable onPress={handleAddContribution}>
               <Text style={styles.saveText}>{t('common.save')}</Text>
             </Pressable>
@@ -256,7 +256,7 @@ export const InvestmentDetailScreen: React.FC = () => {
             <Pressable onPress={() => setShowValueModal(false)}>
               <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Text style={styles.modalTitle}>Update Current Value</Text>
+            <Text style={styles.modalTitle}>{t('accounts.updateCurrentValue')}</Text>
             <Pressable onPress={handleUpdateValue}>
               <Text style={styles.saveText}>{t('common.save')}</Text>
             </Pressable>

@@ -50,7 +50,9 @@ export const EditCategoriesScreen: React.FC = () => {
   const handleDeleteCategory = (category: Category) => {
     Alert.alert(
       t('common.delete'),
-      `Delete "${settings.language === 'es' ? category.name : category.nameEn}"?`,
+      t('settings.deleteCategoryConfirm', {
+        name: settings.language === 'es' ? category.name : category.nameEn,
+      }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -67,7 +69,7 @@ export const EditCategoriesScreen: React.FC = () => {
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) {
-      Alert.alert(t('common.error'), 'Please enter a name');
+      Alert.alert(t('common.error'), t('common.pleaseEnterName'));
       return;
     }
 
@@ -87,7 +89,7 @@ export const EditCategoriesScreen: React.FC = () => {
 
   const handleAddSubcategory = (categoryId: string) => {
     if (!newCategoryName.trim()) {
-      Alert.alert(t('common.error'), 'Please enter a name');
+      Alert.alert(t('common.error'), t('common.pleaseEnterName'));
       return;
     }
 
@@ -231,22 +233,22 @@ export const EditCategoriesScreen: React.FC = () => {
           </View>
 
           <View style={styles.modalContent}>
-            <Text style={styles.inputLabel}>Name (Spanish)</Text>
+            <Text style={styles.inputLabel}>{t('settings.nameSpanish')}</Text>
             <TextInput
               style={styles.input}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
-              placeholder="e.g., Transporte"
+              placeholder={t('settings.categoryNamePlaceholderEs')}
               placeholderTextColor={theme.textSecondary}
               autoFocus
             />
 
-            <Text style={styles.inputLabel}>Name (English)</Text>
+            <Text style={styles.inputLabel}>{t('settings.nameEnglish')}</Text>
             <TextInput
               style={styles.input}
               value={newCategoryNameEn}
               onChangeText={setNewCategoryNameEn}
-              placeholder="e.g., Transportation"
+              placeholder={t('settings.categoryNamePlaceholderEn')}
               placeholderTextColor={theme.textSecondary}
             />
           </View>

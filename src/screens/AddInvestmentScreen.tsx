@@ -20,12 +20,12 @@ import { parseNumber, getDateISO } from '../utils/formatters';
 import { t } from '../locales/i18n';
 
 const investmentTypes = [
-  { id: 'stocks', name: 'Stocks', nameEn: 'Stocks' },
-  { id: 'crypto', name: 'Crypto', nameEn: 'Crypto' },
-  { id: 'fund', name: 'Investment Fund', nameEn: 'Investment Fund' },
+  { id: 'stocks', name: 'Acciones', nameEn: 'Stocks' },
+  { id: 'crypto', name: 'Cripto', nameEn: 'Crypto' },
+  { id: 'fund', name: 'Fondo de inversión', nameEn: 'Investment Fund' },
   { id: 'etf', name: 'ETF', nameEn: 'ETF' },
-  { id: 'pension', name: 'Pension', nameEn: 'Pension' },
-  { id: 'other', name: 'Other', nameEn: 'Other' },
+  { id: 'pension', name: 'Plan de pensiones', nameEn: 'Pension' },
+  { id: 'other', name: 'Otro', nameEn: 'Other' },
 ];
 
 export const AddInvestmentScreen: React.FC = () => {
@@ -43,12 +43,12 @@ export const AddInvestmentScreen: React.FC = () => {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert(t('common.error'), 'Please enter an investment name');
+      Alert.alert(t('common.error'), t('accounts.pleaseEnterInvestmentName'));
       return;
     }
 
     if (!selectedType) {
-      Alert.alert(t('common.error'), 'Please select a type');
+      Alert.alert(t('common.error'), t('accounts.pleaseSelectType'));
       return;
     }
 
@@ -64,7 +64,7 @@ export const AddInvestmentScreen: React.FC = () => {
       addContribution(newInvestmentId, {
         amount: parseNumber(initialContribution),
         date: getDateISO(),
-        note: 'Initial contribution',
+        note: t('accounts.initialContributionNote'),
       });
     }
 
@@ -90,18 +90,18 @@ export const AddInvestmentScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
       >
         {/* Investment Name */}
-        <Text style={styles.label}>Investment Name</Text>
+        <Text style={styles.label}>{t('accounts.investmentName')}</Text>
         <TextInput
           style={styles.textInput}
           value={name}
           onChangeText={setName}
-          placeholder="e.g., S&P 500 Index Fund"
+          placeholder={t('accounts.investmentNamePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           autoFocus
         />
 
         {/* Type Selection */}
-        <Text style={styles.label}>Type</Text>
+        <Text style={styles.label}>{t('accounts.type')}</Text>
         <View style={styles.typeContainer}>
           {investmentTypes.map((type) => (
             <Pressable
@@ -128,7 +128,7 @@ export const AddInvestmentScreen: React.FC = () => {
         </View>
 
         {/* Initial Contribution */}
-        <Text style={styles.label}>Initial Contribution (optional)</Text>
+        <Text style={styles.label}>{t('accounts.initialContribution')}</Text>
         <AmountInput
           value={initialContribution}
           onChangeText={setInitialContribution}

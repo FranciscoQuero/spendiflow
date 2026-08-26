@@ -50,6 +50,7 @@ export default {
     business: 'Negocio',
     edit: 'Editar',
     fromTo: '{{from}} → {{to}}',
+    notFound: 'Transacción no encontrada',
   },
 
   // Add Transaction
@@ -181,6 +182,7 @@ export default {
     bankName: 'Banco',
     bankNamePlaceholder: 'Ej: BBVA, Santander',
     initialBalance: 'Saldo inicial (opcional)',
+    initialBalanceNote: 'Saldo inicial',
     role: 'Rol',
     roleOptions: {
       personal: 'Personal',
@@ -214,6 +216,21 @@ export default {
     pleaseEnterBankName: 'Introduce el nombre del banco',
     owedToMe: 'Me deben',
     addProvision: 'Añadir hucha',
+    investmentName: 'Nombre de la inversión',
+    investmentNamePlaceholder: 'Ej: Fondo indexado S&P 500',
+    type: 'Tipo',
+    initialContribution: 'Aportación inicial (opcional)',
+    initialContributionNote: 'Aportación inicial',
+    pleaseEnterInvestmentName: 'Introduce un nombre para la inversión',
+    pleaseSelectType: 'Selecciona un tipo',
+    investmentNotFound: 'Inversión no encontrada',
+    deleteInvestmentConfirm: '¿Eliminar "%{name}"?',
+    return: 'Rentabilidad',
+    addContribution: 'Añadir aportación',
+    updateValue: 'Actualizar valor',
+    updateCurrentValue: 'Actualizar valor actual',
+    contributions: 'Aportaciones',
+    noContributions: 'Sin aportaciones todavía',
   },
 
   // Settings
@@ -233,6 +250,11 @@ export default {
     incomeCategories: 'Categorías de ingresos',
     addCategory: 'Añadir categoría',
     addSubcategory: 'Añadir subcategoría',
+    deleteCategoryConfirm: '¿Eliminar "%{name}"?',
+    nameSpanish: 'Nombre (español)',
+    nameEnglish: 'Nombre (inglés)',
+    categoryNamePlaceholderEs: 'Ej: Transporte',
+    categoryNamePlaceholderEn: 'Ej: Transportation',
     data: 'Datos',
     exportData: 'Exportar datos',
     exportingData: 'Exportando...',
@@ -276,6 +298,7 @@ export default {
     yesterday: 'Ayer',
     currency: '€',
     underConstruction: 'En construcción',
+    pleaseEnterName: 'Introduce un nombre',
   },
 
   // Transfers

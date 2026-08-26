@@ -53,7 +53,7 @@ export const TransactionDetailScreen: React.FC = () => {
           </Pressable>
         </View>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Transaction not found</Text>
+          <Text style={styles.notFoundText}>{t('transactions.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
