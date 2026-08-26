@@ -289,7 +289,16 @@ export const AccountsScreen: React.FC = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{t('accounts.title')}</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>{t('accounts.title')}</Text>
+            <Pressable
+              style={styles.monthCloseButton}
+              onPress={() => navigation.navigate('MonthClose')}
+            >
+              <Ionicons name="checkmark-done-circle-outline" size={18} color={colors.primary} />
+              <Text style={styles.monthCloseButtonText}>{t('monthClose.entryPoint')}</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Summary Cards */}
@@ -412,10 +421,31 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: colors.text,
+  },
+  monthCloseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  monthCloseButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
   },
   summaryRow: {
     flexDirection: 'row',
