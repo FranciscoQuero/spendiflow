@@ -33,6 +33,12 @@
       "expo-localization",
       "@react-native-community/datetimepicker",
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0739be1a-0c5d-482c-9ddf-a475c97ef0f3"
+      }
+    },
+    "owner": "11ideas"
   }
 }
