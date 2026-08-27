@@ -20,7 +20,7 @@ import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { t } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
-import { Category } from '../types';
+import { Category, Subcategory } from '../types';
 
 type RouteProps = RouteProp<RootStackParamList, 'EditCategories'>;
 
@@ -35,7 +35,9 @@ export const EditCategoriesScreen: React.FC = () => {
   const categories = useStore((state) => state.categories);
   const deleteCategory = useStore((state) => state.deleteCategory);
   const addCategory = useStore((state) => state.addCategory);
+  const updateCategory = useStore((state) => state.updateCategory);
   const addSubcategory = useStore((state) => state.addSubcategory);
+  const updateSubcategory = useStore((state) => state.updateSubcategory);
   const deleteSubcategory = useStore((state) => state.deleteSubcategory);
   const settings = useStore((state) => state.settings);
 
@@ -44,6 +46,11 @@ export const EditCategoriesScreen: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryNameEn, setNewCategoryNameEn] = useState('');
   const [addingSubcategoryTo, setAddingSubcategoryTo] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<{
+    categoryId: string;
+    subcategoryId: string;
+  } | null>(null);
 
   const filteredCategories = categories.filter((c) => c.type === type);
   const isExpense = type === 'expense';
@@ -68,46 +75,88 @@ export const EditCategoriesScreen: React.FC = () => {
     );
   };
 
-  const handleAddCategory = () => {
-    if (!newCategoryName.trim()) {
-      Alert.alert(t('common.error'), t('common.pleaseEnterName'));
-      return;
-    }
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addCategory({
-      name: newCategoryName.trim(),
-      nameEn: newCategoryNameEn.trim() || newCategoryName.trim(),
-      color: isExpense ? theme.expense : theme.income,
-      icon: 'ellipse',
-      type,
-    });
-
+  const resetModalState = () => {
+    setShowAddModal(false);
+    setAddingSubcategoryTo(null);
+    setEditingCategoryId(null);
+    setEditingSubcategory(null);
     setNewCategoryName('');
     setNewCategoryNameEn('');
-    setShowAddModal(false);
   };
 
-  const handleAddSubcategory = (categoryId: string) => {
+  const handleOpenAddCategory = () => {
+    setNewCategoryName('');
+    setNewCategoryNameEn('');
+    setShowAddModal(true);
+  };
+
+  const handleOpenAddSubcategory = (categoryId: string) => {
+    setNewCategoryName('');
+    setNewCategoryNameEn('');
+    setAddingSubcategoryTo(categoryId);
+  };
+
+  const handleOpenEditCategory = (category: Category) => {
+    setNewCategoryName(category.name);
+    setNewCategoryNameEn(category.nameEn);
+    setEditingCategoryId(category.id);
+  };
+
+  const handleOpenEditSubcategory = (categoryId: string, sub: Subcategory) => {
+    setNewCategoryName(sub.name);
+    setNewCategoryNameEn(sub.nameEn);
+    setEditingSubcategory({ categoryId, subcategoryId: sub.id });
+  };
+
+  const handleSaveModal = () => {
     if (!newCategoryName.trim()) {
       Alert.alert(t('common.error'), t('common.pleaseEnterName'));
       return;
     }
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addSubcategory(
-      categoryId,
-      newCategoryName.trim(),
-      newCategoryNameEn.trim() || newCategoryName.trim()
-    );
+    const name = newCategoryName.trim();
+    const nameEn = newCategoryNameEn.trim() || name;
 
-    setNewCategoryName('');
-    setNewCategoryNameEn('');
-    setAddingSubcategoryTo(null);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    if (editingCategoryId) {
+      updateCategory(editingCategoryId, { name, nameEn });
+    } else if (editingSubcategory) {
+      updateSubcategory(editingSubcategory.categoryId, editingSubcategory.subcategoryId, {
+        name,
+        nameEn,
+      });
+    } else if (addingSubcategoryTo) {
+      addSubcategory(addingSubcategoryTo, name, nameEn);
+    } else {
+      addCategory({
+        name,
+        nameEn,
+        color: isExpense ? theme.expense : theme.income,
+        icon: 'ellipse',
+        type,
+      });
+    }
+
+    resetModalState();
   };
 
   const getCategoryName = (cat: Category) =>
     settings.language === 'es' ? cat.name : cat.nameEn;
+
+  const modalVisible =
+    showAddModal ||
+    addingSubcategoryTo !== null ||
+    editingCategoryId !== null ||
+    editingSubcategory !== null;
+
+  const modalTitle = editingCategoryId
+    ? t('settings.editCategory')
+    : editingSubcategory
+    ? t('settings.editSubcategory')
+    : addingSubcategoryTo
+    ? t('settings.addSubcategory')
+    : t('settings.addCategory');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -121,7 +170,7 @@ export const EditCategoriesScreen: React.FC = () => {
             ? t('settings.expenseCategories')
             : t('settings.incomeCategories')}
         </Text>
-        <Pressable onPress={() => setShowAddModal(true)} style={styles.backButton}>
+        <Pressable onPress={handleOpenAddCategory} style={styles.backButton}>
           <Ionicons name="add" size={28} color={theme.primary} />
         </Pressable>
       </View>
@@ -148,6 +197,12 @@ export const EditCategoriesScreen: React.FC = () => {
               </View>
               <View style={styles.categoryRight}>
                 <Pressable
+                  onPress={() => handleOpenEditCategory(category)}
+                  hitSlop={8}
+                >
+                  <Ionicons name="pencil-outline" size={20} color={theme.textSecondary} />
+                </Pressable>
+                <Pressable
                   onPress={() => handleDeleteCategory(category)}
                   hitSlop={8}
                 >
@@ -172,21 +227,33 @@ export const EditCategoriesScreen: React.FC = () => {
                     <Text style={styles.subcategoryName}>
                       {settings.language === 'es' ? sub.name : sub.nameEn}
                     </Text>
-                    <Pressable
-                      onPress={() => deleteSubcategory(category.id, sub.id)}
-                      hitSlop={8}
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={20}
-                        color={theme.textSecondary}
-                      />
-                    </Pressable>
+                    <View style={styles.subcategoryActions}>
+                      <Pressable
+                        onPress={() => handleOpenEditSubcategory(category.id, sub)}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name="pencil-outline"
+                          size={18}
+                          color={theme.textSecondary}
+                        />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => deleteSubcategory(category.id, sub.id)}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={20}
+                          color={theme.textSecondary}
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 ))}
                 <Pressable
                   style={styles.addSubcategoryButton}
-                  onPress={() => setAddingSubcategoryTo(category.id)}
+                  onPress={() => handleOpenAddSubcategory(category.id)}
                 >
                   <Ionicons name="add" size={20} color={theme.primary} />
                   <Text style={styles.addSubcategoryText}>
@@ -199,37 +266,20 @@ export const EditCategoriesScreen: React.FC = () => {
         ))}
       </ScrollView>
 
-      {/* Add Category Modal */}
+      {/* Add/Edit Category or Subcategory Modal */}
       <Modal
-        visible={showAddModal || addingSubcategoryTo !== null}
+        visible={modalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
       >
         <SafeAreaView style={styles.modalContainer}>
           <FormScrollView>
             <View style={styles.modalHeader}>
-              <Pressable
-                onPress={() => {
-                  setShowAddModal(false);
-                  setAddingSubcategoryTo(null);
-                  setNewCategoryName('');
-                  setNewCategoryNameEn('');
-                }}
-              >
+              <Pressable onPress={resetModalState}>
                 <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
-              <Text style={styles.modalTitle}>
-                {addingSubcategoryTo
-                  ? t('settings.addSubcategory')
-                  : t('settings.addCategory')}
-              </Text>
-              <Pressable
-                onPress={() =>
-                  addingSubcategoryTo
-                    ? handleAddSubcategory(addingSubcategoryTo)
-                    : handleAddCategory()
-                }
-              >
+              <Text style={styles.modalTitle}>{modalTitle}</Text>
+              <Pressable onPress={handleSaveModal}>
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </Pressable>
             </View>
@@ -342,6 +392,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   subcategoryName: {
     fontSize: 15,
     color: theme.text,
+  },
+  subcategoryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   addSubcategoryButton: {
     flexDirection: 'row',

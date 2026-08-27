@@ -281,3 +281,92 @@ describe('deleteInvestmentValueEntry', () => {
     expect(investment?.lastUpdated).toBeUndefined();
   });
 });
+
+describe('updateSubcategory', () => {
+  beforeEach(() => {
+    useStore.getState().resetAllData();
+  });
+
+  it('renames the subcategory in place, keeping its id and categoryId', () => {
+    const categoryId = useStore.getState().addCategory({
+      name: 'Ocio',
+      nameEn: 'Leisure',
+      color: '#000000',
+      icon: 'game-controller',
+      type: 'expense',
+    });
+    useStore.getState().addSubcategory(categoryId, 'Cine', 'Movies');
+
+    const subcategoryId = useStore
+      .getState()
+      .categories.find((c) => c.id === categoryId)!.subcategories[0].id;
+
+    useStore.getState().updateSubcategory(categoryId, subcategoryId, {
+      name: 'Cine y teatro',
+      nameEn: 'Movies and theatre',
+    });
+
+    const subcategory = useStore
+      .getState()
+      .categories.find((c) => c.id === categoryId)!.subcategories[0];
+
+    expect(subcategory.id).toBe(subcategoryId);
+    expect(subcategory.categoryId).toBe(categoryId);
+    expect(subcategory.name).toBe('Cine y teatro');
+    expect(subcategory.nameEn).toBe('Movies and theatre');
+  });
+
+  it('supports a partial update, leaving the other name untouched', () => {
+    const categoryId = useStore.getState().addCategory({
+      name: 'Ocio',
+      nameEn: 'Leisure',
+      color: '#000000',
+      icon: 'game-controller',
+      type: 'expense',
+    });
+    useStore.getState().addSubcategory(categoryId, 'Cine', 'Movies');
+
+    const subcategoryId = useStore
+      .getState()
+      .categories.find((c) => c.id === categoryId)!.subcategories[0].id;
+
+    useStore.getState().updateSubcategory(categoryId, subcategoryId, { name: 'Cine ES' });
+
+    const subcategory = useStore
+      .getState()
+      .categories.find((c) => c.id === categoryId)!.subcategories[0];
+
+    expect(subcategory.name).toBe('Cine ES');
+    expect(subcategory.nameEn).toBe('Movies');
+  });
+
+  it('does not affect subcategories of other categories', () => {
+    const categoryId = useStore.getState().addCategory({
+      name: 'Ocio',
+      nameEn: 'Leisure',
+      color: '#000000',
+      icon: 'game-controller',
+      type: 'expense',
+    });
+    const otherCategoryId = useStore.getState().addCategory({
+      name: 'Casa',
+      nameEn: 'Housing',
+      color: '#111111',
+      icon: 'home',
+      type: 'expense',
+    });
+    useStore.getState().addSubcategory(categoryId, 'Cine', 'Movies');
+    useStore.getState().addSubcategory(otherCategoryId, 'Luz', 'Electricity');
+
+    const subcategoryId = useStore
+      .getState()
+      .categories.find((c) => c.id === categoryId)!.subcategories[0].id;
+
+    useStore.getState().updateSubcategory(categoryId, subcategoryId, { name: 'Cine ES' });
+
+    const otherSubcategory = useStore
+      .getState()
+      .categories.find((c) => c.id === otherCategoryId)!.subcategories[0];
+    expect(otherSubcategory.name).toBe('Luz');
+  });
+});
