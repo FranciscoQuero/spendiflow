@@ -150,6 +150,14 @@ export interface RecurringRule {
   createdAt: string;
 }
 
+export interface CategoryBudget {
+  id: string;
+  categoryId: string;
+  subcategoryId?: string; // presente = presupuesto de esa subcategoría concreta
+  amount: number; // mensual, > 0
+  createdAt: string;
+}
+
 export interface PlannedEvent {
   // calendario financiero: vencimientos con importe estimado
   id: string;

@@ -63,6 +63,7 @@ describe('migrate (persist v0/v1/v2 -> v3)', () => {
     expect(migrated.provisions).toEqual([]);
     expect(migrated.recurringRules).toEqual([]);
     expect(migrated.plannedEvents).toEqual([]);
+    expect(migrated.categoryBudgets).toEqual([]);
   });
 
   it('is robust against undefined/empty persisted state', () => {
@@ -75,6 +76,7 @@ describe('migrate (persist v0/v1/v2 -> v3)', () => {
     expect(migrated.provisions).toEqual([]);
     expect(migrated.recurringRules).toEqual([]);
     expect(migrated.plannedEvents).toEqual([]);
+    expect(migrated.categoryBudgets).toEqual([]);
     expect(migrated.categories.length).toBeGreaterThan(0);
     expect(migrated.settings.language).toBe('es');
   });

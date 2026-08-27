@@ -17,6 +17,7 @@ import {
   Provision,
   RecurringRule,
   PlannedEvent,
+  CategoryBudget,
   AppSettings,
 } from '../types';
 
@@ -32,6 +33,7 @@ export interface BackupData {
   provisions: Provision[];
   recurringRules: RecurringRule[];
   plannedEvents: PlannedEvent[];
+  categoryBudgets: CategoryBudget[];
   settings: AppSettings;
 }
 
@@ -51,6 +53,7 @@ const COLLECTION_FIELDS = [
   'provisions',
   'recurringRules',
   'plannedEvents',
+  'categoryBudgets',
 ] as const;
 
 /** Nombre de archivo con la fecha del día: spendiflow-backup-YYYY-MM-DD.json */
@@ -138,6 +141,7 @@ export const validateBackup = (raw: unknown): ValidateBackupResult => {
         provisions: migrated.provisions,
         recurringRules: migrated.recurringRules,
         plannedEvents: migrated.plannedEvents,
+        categoryBudgets: migrated.categoryBudgets,
         settings: migrated.settings,
       },
     },
@@ -154,6 +158,7 @@ export const summarizeBackup = (data: BackupData) => ({
   provisions: data.provisions.length,
   recurringRules: data.recurringRules.length,
   plannedEvents: data.plannedEvents.length,
+  categoryBudgets: data.categoryBudgets.length,
 });
 
 /**

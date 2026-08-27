@@ -12,6 +12,7 @@ import {
   Provision,
   RecurringRule,
   PlannedEvent,
+  CategoryBudget,
   AppSettings,
   BalanceEntry,
   Contribution,
@@ -156,6 +157,7 @@ interface StoreState {
   provisions: Provision[];
   recurringRules: RecurringRule[];
   plannedEvents: PlannedEvent[];
+  categoryBudgets: CategoryBudget[];
   settings: AppSettings;
 
   // Transaction Actions
@@ -214,6 +216,17 @@ interface StoreState {
   addPlannedEvent: (event: Omit<PlannedEvent, 'id' | 'createdAt'>) => string;
   updatePlannedEvent: (id: string, updates: Partial<PlannedEvent>) => void;
   deletePlannedEvent: (id: string) => void;
+
+  // Category Budget Actions
+  /**
+   * Crea un presupuesto de categoría/subcategoría, o actualiza el importe del
+   * ya existente para la misma (categoryId, subcategoryId) en vez de
+   * duplicarlo — solo puede haber un presupuesto por combinación. Devuelve
+   * el id del presupuesto creado o actualizado.
+   */
+  addCategoryBudget: (budget: Omit<CategoryBudget, 'id' | 'createdAt'>) => string;
+  updateCategoryBudget: (id: string, updates: Partial<CategoryBudget>) => void;
+  deleteCategoryBudget: (id: string) => void;
 
   // Settings Actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -333,6 +346,9 @@ export const migrate = (persistedState: unknown): StoreState => {
   const plannedEvents = Array.isArray(state.plannedEvents)
     ? (state.plannedEvents as PlannedEvent[])
     : [];
+  const categoryBudgets = Array.isArray(state.categoryBudgets)
+    ? (state.categoryBudgets as CategoryBudget[])
+    : [];
 
   // El spread de `initialSettings` primero rellena de forma no destructiva
   // cualquier campo nuevo (p.ej. `defaultAccountId`) que no existiera en un
@@ -364,6 +380,7 @@ export const migrate = (persistedState: unknown): StoreState => {
     provisions,
     recurringRules,
     plannedEvents,
+    categoryBudgets,
     settings,
   } as StoreState;
 };
@@ -380,6 +397,7 @@ export const useStore = create<StoreState>()(
       provisions: [],
       recurringRules: [],
       plannedEvents: [],
+      categoryBudgets: [],
       settings: initialSettings,
 
       // Transaction Actions
@@ -786,6 +804,44 @@ export const useStore = create<StoreState>()(
           plannedEvents: state.plannedEvents.filter((e) => e.id !== id),
         })),
 
+      // Category Budget Actions
+      addCategoryBudget: (budget) => {
+        const existing = get().categoryBudgets.find(
+          (b) =>
+            b.categoryId === budget.categoryId && b.subcategoryId === budget.subcategoryId
+        );
+
+        if (existing) {
+          set((state) => ({
+            categoryBudgets: state.categoryBudgets.map((b) =>
+              b.id === existing.id ? { ...b, amount: budget.amount } : b
+            ),
+          }));
+          return existing.id;
+        }
+
+        const id = uuidv4();
+        set((state) => ({
+          categoryBudgets: [
+            ...state.categoryBudgets,
+            { ...budget, id, createdAt: new Date().toISOString() },
+          ],
+        }));
+        return id;
+      },
+
+      updateCategoryBudget: (id, updates) =>
+        set((state) => ({
+          categoryBudgets: state.categoryBudgets.map((b) =>
+            b.id === id ? { ...b, ...updates } : b
+          ),
+        })),
+
+      deleteCategoryBudget: (id) =>
+        set((state) => ({
+          categoryBudgets: state.categoryBudgets.filter((b) => b.id !== id),
+        })),
+
       // Settings Actions
       updateSettings: (newSettings) =>
         set((state) => ({
@@ -803,6 +859,7 @@ export const useStore = create<StoreState>()(
           provisions: [],
           recurringRules: [],
           plannedEvents: [],
+          categoryBudgets: [],
           settings: initialSettings,
         }),
     }),
