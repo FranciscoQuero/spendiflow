@@ -296,6 +296,8 @@ export default {
     incomeCategories: 'Income categories',
     addCategory: 'Add category',
     addSubcategory: 'Add subcategory',
+    editCategory: 'Edit category',
+    editSubcategory: 'Edit subcategory',
     deleteCategoryConfirm: 'Delete "%{name}"?',
     nameSpanish: 'Name (Spanish)',
     nameEnglish: 'Name (English)',

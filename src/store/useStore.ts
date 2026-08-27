@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   Transaction,
   Category,
+  Subcategory,
   BankAccount,
   Investment,
   InvestmentValueEntry,
@@ -170,6 +171,11 @@ interface StoreState {
   updateCategory: (id: string, updates: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   addSubcategory: (categoryId: string, name: string, nameEn: string) => void;
+  updateSubcategory: (
+    categoryId: string,
+    subcategoryId: string,
+    updates: Partial<Pick<Subcategory, 'name' | 'nameEn'>>
+  ) => void;
   deleteSubcategory: (categoryId: string, subcategoryId: string) => void;
 
   // Bank Account Actions
@@ -471,6 +477,20 @@ export const useStore = create<StoreState>()(
                     ...c.subcategories,
                     { id: uuidv4(), name, nameEn, categoryId },
                   ],
+                }
+              : c
+          ),
+        })),
+
+      updateSubcategory: (categoryId, subcategoryId, updates) =>
+        set((state) => ({
+          categories: state.categories.map((c) =>
+            c.id === categoryId
+              ? {
+                  ...c,
+                  subcategories: c.subcategories.map((s) =>
+                    s.id === subcategoryId ? { ...s, ...updates } : s
+                  ),
                 }
               : c
           ),
