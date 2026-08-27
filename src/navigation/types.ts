@@ -32,6 +32,7 @@ export type RootStackParamList = {
   AddProvision: { accountId?: string } | undefined;
   MonthClose: undefined;
   PlannedEvents: undefined;
+  Budgets: undefined;
 };
 
 declare global {

@@ -35,6 +35,7 @@ export default {
     budgetSpentOf: 'Gastado %{spent} de %{budget}',
     budgetRemaining: 'Quedan %{amount} · %{days} días',
     budgetOverBy: 'Presupuesto superado en %{amount}',
+    budgetsSummary: 'Presupuestos: %{onTrack} al día · %{over} pasados',
   },
 
   // Transactions
@@ -334,6 +335,26 @@ export default {
       'Para recibir el recordatorio diario, activa las notificaciones de Spendiflow en los ajustes del sistema.',
     dailyReminderNotificationTitle: '¿Gastos de hoy?',
     dailyReminderNotificationBody: 'Registra los movimientos del día en un minuto.',
+  },
+
+  // Budgets (presupuesto global + presupuestos por categoría/subcategoría)
+  budgets: {
+    title: 'Presupuestos',
+    globalBudget: 'Presupuesto global',
+    globalNotSetHint: 'Sin definir. Toca para fijar un objetivo de gasto mensual.',
+    allocatedOfGlobal: 'Presupuestado en categorías: %{allocated} de %{global} global',
+    unbudgetedLabel: 'Sin presupuestar',
+    unbudgetedHint: 'Gasto del mes en categorías sin presupuesto asignado. Útil para distinguir un imprevisto puntual de un presupuesto incumplido.',
+    categoryBudgets: 'Presupuestos por categoría',
+    wholeCategory: 'Toda la categoría',
+    selectCategory: 'Elige una categoría',
+    selectSubcategory: 'Alcance del presupuesto',
+    amountTitle: 'Importe del presupuesto',
+    amountHint: 'Objetivo de gasto mensual para esta categoría.',
+    deleteConfirm: '¿Eliminar el presupuesto de "%{name}"?',
+    emptyTitle: 'Sin presupuestos por categoría',
+    emptyDescription: 'Fija un límite de gasto mensual para una categoría o subcategoría y compáralo con lo gastado en tiempo real.',
+    createButton: 'Crear presupuesto',
   },
 
   // Common

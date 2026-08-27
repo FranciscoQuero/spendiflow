@@ -7,7 +7,6 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
-  Modal,
   Switch,
   Platform,
 } from 'react-native';
@@ -21,15 +20,13 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { Card } from '../components/Card';
-import { AmountInput } from '../components/AmountInput';
-import { FormScrollView } from '../components/FormScrollView';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme } from '../theme/colors';
 import { t, setLocale } from '../locales/i18n';
 import { RootStackParamList } from '../navigation/types';
 import { AppSettings } from '../types';
-import { formatCurrency, parseNumber } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import {
   validateBackup,
   writeBackupFile,
@@ -74,8 +71,6 @@ export const SettingsScreen: React.FC = () => {
 
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [showBudgetModal, setShowBudgetModal] = useState(false);
-  const [budgetInput, setBudgetInput] = useState('');
   const locale = settings.language === 'es' ? 'es-ES' : 'en-US';
   const [isSyncingReminder, setIsSyncingReminder] = useState(false);
   const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
@@ -98,43 +93,6 @@ export const SettingsScreen: React.FC = () => {
 
   const handleThemeChange = (themeSetting: AppSettings['theme']) => {
     updateSettings({ theme: themeSetting });
-  };
-
-  const openBudgetModal = () => {
-    setBudgetInput(
-      settings.monthlyBudget && settings.monthlyBudget > 0
-        ? String(settings.monthlyBudget).replace('.', ',')
-        : ''
-    );
-    setShowBudgetModal(true);
-  };
-
-  const closeBudgetModal = () => {
-    setShowBudgetModal(false);
-    setBudgetInput('');
-  };
-
-  const handleSaveBudget = () => {
-    const trimmed = budgetInput.trim();
-    if (trimmed === '') {
-      updateSettings({ monthlyBudget: undefined });
-      closeBudgetModal();
-      return;
-    }
-
-    const parsed = parseNumber(trimmed);
-    if (parsed <= 0) {
-      Alert.alert(t('common.error'), t('accounts.pleaseEnterValidAmount'));
-      return;
-    }
-
-    updateSettings({ monthlyBudget: parsed });
-    closeBudgetModal();
-  };
-
-  const handleRemoveBudget = () => {
-    updateSettings({ monthlyBudget: undefined });
-    closeBudgetModal();
   };
 
   const handleDefaultAccountChange = (accountId: string | undefined) => {
@@ -223,6 +181,7 @@ export const SettingsScreen: React.FC = () => {
         provisions: state.provisions,
         recurringRules: state.recurringRules,
         plannedEvents: state.plannedEvents,
+        categoryBudgets: state.categoryBudgets,
         settings: state.settings,
       });
 
@@ -266,6 +225,7 @@ export const SettingsScreen: React.FC = () => {
               provisions: data.provisions,
               recurringRules: data.recurringRules,
               plannedEvents: data.plannedEvents,
+              categoryBudgets: data.categoryBudgets,
               settings: data.settings,
             });
             setLocale(data.settings.language);
@@ -572,7 +532,7 @@ export const SettingsScreen: React.FC = () => {
                 ? formatCurrency(settings.monthlyBudget, settings.currencySymbol, locale)
                 : t('settings.monthlyBudgetNotSet')
             }
-            onPress={openBudgetModal}
+            onPress={() => navigation.navigate('Budgets')}
           />
         </Card>
 
@@ -653,36 +613,6 @@ export const SettingsScreen: React.FC = () => {
 
         <Text style={styles.footer}>{t('app.tagline')}</Text>
       </ScrollView>
-
-      <Modal visible={showBudgetModal} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView style={styles.modalContainer}>
-          <FormScrollView>
-            <View style={styles.modalHeader}>
-              <Pressable onPress={closeBudgetModal}>
-                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-              </Pressable>
-              <Text style={styles.modalTitle}>{t('settings.monthlyBudget')}</Text>
-              <Pressable onPress={handleSaveBudget}>
-                <Text style={styles.saveText}>{t('common.save')}</Text>
-              </Pressable>
-            </View>
-            <ScrollView
-              contentContainerStyle={styles.modalContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.modalHint}>{t('settings.monthlyBudgetHint')}</Text>
-              <AmountInput value={budgetInput} onChangeText={setBudgetInput} type="transfer" autoFocus />
-              {!!settings.monthlyBudget && settings.monthlyBudget > 0 && (
-                <Pressable style={styles.removeBudgetButton} onPress={handleRemoveBudget}>
-                  <Text style={styles.removeBudgetText}>
-                    {t('settings.monthlyBudgetRemove')}
-                  </Text>
-                </Pressable>
-              )}
-            </ScrollView>
-          </FormScrollView>
-        </SafeAreaView>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -796,51 +726,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.textSecondary,
     marginTop: 32,
     fontSize: 14,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: theme.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: theme.textSecondary,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.text,
-  },
-  saveText: {
-    fontSize: 16,
-    color: theme.primary,
-    fontWeight: '600',
-  },
-  modalContent: {
-    padding: 20,
-    paddingBottom: 32,
-  },
-  modalHint: {
-    textAlign: 'center',
-    color: theme.textSecondary,
-    marginBottom: 8,
-  },
-  removeBudgetButton: {
-    alignItems: 'center',
-    paddingVertical: 16,
-    marginTop: 8,
-  },
-  removeBudgetText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: theme.expense,
   },
 });

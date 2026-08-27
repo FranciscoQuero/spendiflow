@@ -35,6 +35,7 @@ export default {
     budgetSpentOf: 'Spent %{spent} of %{budget}',
     budgetRemaining: '%{amount} left · %{days} days',
     budgetOverBy: 'Budget exceeded by %{amount}',
+    budgetsSummary: 'Budgets: %{onTrack} on track · %{over} exceeded',
   },
 
   // Transactions
@@ -334,6 +335,26 @@ export default {
       'To receive the daily reminder, enable notifications for Spendiflow in your system settings.',
     dailyReminderNotificationTitle: "Today's expenses?",
     dailyReminderNotificationBody: 'Log today\'s transactions in a minute.',
+  },
+
+  // Budgets (global budget + per-category/subcategory budgets)
+  budgets: {
+    title: 'Budgets',
+    globalBudget: 'Global budget',
+    globalNotSetHint: 'Not set. Tap to set a monthly spending target.',
+    allocatedOfGlobal: 'Allocated to categories: %{allocated} of %{global} global',
+    unbudgetedLabel: 'Unbudgeted',
+    unbudgetedHint: "This month's spending in categories with no budget assigned. Useful for telling a one-off surprise apart from a broken budget.",
+    categoryBudgets: 'Category budgets',
+    wholeCategory: 'Whole category',
+    selectCategory: 'Choose a category',
+    selectSubcategory: 'Budget scope',
+    amountTitle: 'Budget amount',
+    amountHint: 'Monthly spending target for this category.',
+    deleteConfirm: 'Delete the budget for "%{name}"?',
+    emptyTitle: 'No category budgets yet',
+    emptyDescription: 'Set a monthly spending limit for a category or subcategory and track it against real spending.',
+    createButton: 'Create budget',
   },
 
   // Common

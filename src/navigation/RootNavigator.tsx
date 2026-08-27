@@ -18,6 +18,7 @@ import {
   AddProvisionScreen,
   MonthCloseScreen,
   PlannedEventsScreen,
+  BudgetsScreen,
 } from '../screens';
 import { RootStackParamList } from './types';
 
@@ -50,6 +51,7 @@ export const RootNavigator: React.FC = () => {
         <Stack.Screen name="ProvisionDetail" component={ProvisionDetailScreen} />
         <Stack.Screen name="MonthClose" component={MonthCloseScreen} />
         <Stack.Screen name="PlannedEvents" component={PlannedEventsScreen} />
+        <Stack.Screen name="Budgets" component={BudgetsScreen} />
       </Stack.Group>
     </Stack.Navigator>
   );

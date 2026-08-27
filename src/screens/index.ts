@@ -19,3 +19,4 @@ export { ProvisionDetailScreen } from './ProvisionDetailScreen';
 export { AddProvisionScreen } from './AddProvisionScreen';
 export { MonthCloseScreen } from './MonthCloseScreen';
 export { PlannedEventsScreen } from './PlannedEventsScreen';
+export { BudgetsScreen } from './BudgetsScreen';

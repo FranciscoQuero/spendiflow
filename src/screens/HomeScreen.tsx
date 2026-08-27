@@ -17,7 +17,7 @@ import { RecurrenceActions } from '../components/RecurrenceActions';
 import { useTransactions } from '../hooks/useTransactions';
 import { useAccounts, getMyShareBalance, getInvestmentValue } from '../hooks/useAccounts';
 import { getDebtsNetImpact } from '../utils/monthClose';
-import { computeBudgetProgress } from '../utils/budget';
+import { computeBudgetProgress, computeBudgetLines } from '../utils/budget';
 import { useStore } from '../store/useStore';
 import { useTheme } from '../theme/useTheme';
 import { Theme, hexToRgba } from '../theme/colors';
@@ -55,7 +55,9 @@ export const HomeScreen: React.FC = () => {
   const confirmRecurrence = useStore((state) => state.confirmRecurrence);
   const skipRecurrence = useStore((state) => state.skipRecurrence);
   const plannedEvents = useStore((state) => state.plannedEvents);
-  const { getPeriodSummary, getRecentTransactions } = useTransactions();
+  const categories = useStore((state) => state.categories);
+  const categoryBudgets = useStore((state) => state.categoryBudgets);
+  const { getPeriodSummary, getRecentTransactions, transactions } = useTransactions();
   const { bankAccounts, investments, debts, getDueRecurrences, getNetWorth } = useAccounts();
 
   const summary = getPeriodSummary('month');
@@ -106,6 +108,38 @@ export const HomeScreen: React.FC = () => {
       ? theme.warning
       : theme.primary;
 
+  // Sin presupuesto global: si hay presupuestos por categoría, se muestra una
+  // línea compacta en su lugar (ver `hasBudget` más abajo).
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const hasCategoryBudgets = categoryBudgets.length > 0;
+  const categoryBudgetLines = useMemo(
+    () =>
+      hasCategoryBudgets
+        ? computeBudgetLines(
+            categoryBudgets,
+            categories,
+            transactions,
+            currentMonth,
+            currentYear,
+            dayOfMonth,
+            daysInMonth
+          )
+        : [],
+    [
+      hasCategoryBudgets,
+      categoryBudgets,
+      categories,
+      transactions,
+      currentMonth,
+      currentYear,
+      dayOfMonth,
+      daysInMonth,
+    ]
+  );
+  const overBudgetCount = categoryBudgetLines.filter((l) => l.progress.pace === 'over').length;
+  const onTrackBudgetCount = categoryBudgetLines.length - overBudgetCount;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
@@ -147,7 +181,10 @@ export const HomeScreen: React.FC = () => {
           </View>
 
           {hasBudget && (
-            <View style={styles.budgetContainer}>
+            <Pressable
+              style={styles.budgetContainer}
+              onPress={() => navigation.navigate('Budgets')}
+            >
               <Text style={styles.budgetLabel}>
                 {t('home.budgetSpentOf', {
                   spent: formatCurrency(budgetSpent, settings.currencySymbol, locale),
@@ -187,7 +224,24 @@ export const HomeScreen: React.FC = () => {
                       days: remainingDays,
                     })}
               </Text>
-            </View>
+            </Pressable>
+          )}
+
+          {!hasBudget && hasCategoryBudgets && (
+            <Pressable
+              style={styles.budgetContainer}
+              onPress={() => navigation.navigate('Budgets')}
+            >
+              <View style={styles.budgetCompactRow}>
+                <Text style={styles.budgetCompactText}>
+                  {t('home.budgetsSummary', {
+                    onTrack: onTrackBudgetCount,
+                    over: overBudgetCount,
+                  })}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+              </View>
+            </Pressable>
           )}
         </Card>
 
@@ -574,6 +628,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     color: theme.textSecondary,
     marginTop: 6,
+  },
+  budgetCompactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  budgetCompactText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.text,
   },
   sectionTitle: {
     fontSize: 18,
